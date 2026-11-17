@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Link from "next/link"
 import { Look } from "@/components/look"
 import { VoteBar } from "@/components/vote-bar"
@@ -116,7 +116,7 @@ export function PostDetail({ id }: { id: string }) {
           {post.mine ? (
             <DecideBlock
               decision={post.decision}
-              onDecide={(decision) => decide(post.id, decision)}
+              onDecide={(decision) => decide(post.id, decision, "")}
             />
           ) : post.decision ? (
             <p className="mt-4 text-sm text-muted-foreground">已经决定了，票就停在那一刻。</p>
@@ -315,7 +315,7 @@ function OpinionSection({
   displayName: string
   owner: boolean
   loggedIn: boolean
-  onSubmit: (input: { author: string; stance: Stance; text: string }) => Promise<boolean>
+  onSubmit: (input: { id: string; text: string }) => Promise<boolean>
   onRemove: (opinionId: string) => void
 }) {
   const [stance, setStance] = useState<Stance>("style")
@@ -323,6 +323,7 @@ function OpinionSection({
   const [authorDraft, setAuthorDraft] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const pendingId = useRef<string | null>(null)
   const author = authorDraft ?? displayName
 
   async function submit(event: React.FormEvent) {
@@ -335,7 +336,8 @@ function OpinionSection({
     setSending(true)
     let saved = false
     try {
-      saved = await onSubmit({ author, stance: owner ? "style" : stance, text })
+      pendingId.current ??= crypto.randomUUID()
+      saved = await onSubmit({ id: pendingId.current, text })
     } catch {
       setError("网络没连上，再试一次。")
     } finally {
@@ -343,6 +345,7 @@ function OpinionSection({
     }
     if (saved) {
       setText("")
+      pendingId.current = null
       setError(null)
     } else setError("没有发出去，内容还在，请重试。")
   }

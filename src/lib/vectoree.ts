@@ -4,6 +4,13 @@ import path from "path"
 import type { Account, AuthTokens } from "@/lib/account"
 
 const API = process.env.VECTOREE_API_URL || "https://vectoree.ai"
+export const LOOK_PREFIX = `${API.replace(/\/$/, "")}/api/storage/buckets/looks/objects/`
+
+export class ServiceError extends Error {
+  constructor(message: string, public status = 503, public code = "SERVICE_UNAVAILABLE") {
+    super(message)
+  }
+}
 
 type VeResult = {
   ok: boolean
@@ -36,7 +43,9 @@ async function ve(pathname: string, init: RequestInit & { userToken?: string } =
   if (init.body && !headers.has("content-type") && !(init.body instanceof FormData)) {
     headers.set("content-type", "application/json")
   }
-  const response = await fetch(`${API}${pathname}`, { ...init, headers, cache: "no-store" })
+  const response = await fetch(`${API.replace(/\/$/, "")}${pathname}`, { ...init, headers, cache: "no-store" }).catch(() => {
+    throw new ServiceError("服务器连接失败，请重试。")
+  })
   const text = await response.text()
   let data: Record<string, unknown> | null = null
   if (text) {
@@ -100,20 +109,48 @@ export async function loginAccount(email: string, password: string) {
 }
 
 export async function refreshAccount(refreshToken: string) {
-  return ve("/api/auth/refresh?client_type=server", {
+  const result = await ve("/api/auth/refresh?client_type=server", {
     method: "POST",
     body: JSON.stringify({ refreshToken }),
   })
+  if (result.status >= 500) throw new ServiceError("登录状态暂时无法恢复，请重试。", 503, "AUTH_UNAVAILABLE")
+  return result
 }
 
 export async function currentAccount(accessToken: string) {
-  return ve("/api/auth/sessions/current", { userToken: accessToken })
+  const result = await ve("/api/auth/sessions/current", { userToken: accessToken })
+  if (result.status >= 500) throw new ServiceError("登录状态暂时无法验证，请重试。", 503, "AUTH_UNAVAILABLE")
+  return result
 }
 
 export async function rows(table: string, query = "") {
   const result = await ve(`/api/database/records/${table}${query}`)
-  if (!result.ok || !Array.isArray(result.data)) return []
+  if (!result.ok) throw new ServiceError("数据读取失败，请重试。", 503, "DATABASE_READ_FAILED")
+  if (!Array.isArray(result.data)) throw new ServiceError("服务器返回的数据格式不正确。", 502, "INVALID_DATABASE_RESPONSE")
   return result.data as unknown as Record<string, unknown>[]
+}
+
+// 即使平台限制单页大小，也继续读取到空页，不能以首屏推算统计。
+export async function allRows(table: string, query = "") {
+  const params = new URLSearchParams(query.replace(/^\?/, ""))
+  params.delete("limit")
+  params.delete("offset")
+  if (!params.has("order")) params.set("order", "id.asc")
+  const collected: Record<string, unknown>[] = []
+  const seen = new Set<string>()
+  for (;;) {
+    params.set("limit", "500")
+    params.set("offset", String(collected.length))
+    const page = await rows(table, `?${params}`)
+    if (!page.length) return collected
+    for (const row of page) {
+      if (typeof row.id !== "string" || seen.has(row.id)) {
+        throw new ServiceError("分页数据发生变化，请刷新重试。", 503, "INCONSISTENT_PAGINATION")
+      }
+      seen.add(row.id)
+      collected.push(row)
+    }
+  }
 }
 
 export async function insertRow(table: string, row: Record<string, unknown>) {
@@ -134,9 +171,9 @@ export async function deleteRows(table: string, query: string) {
   return ve(`/api/database/records/${table}?${query}`, { method: "DELETE" })
 }
 
-export async function uploadLook(bytes: Buffer, mime: string) {
+export async function uploadLook(bytes: Buffer, mime: string, objectKey?: string) {
   const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg"
-  const key = `${randomUUID()}.${ext}`
+  const key = objectKey || `${randomUUID()}.${ext}`
   const form = new FormData()
   form.append("file", new Blob([new Uint8Array(bytes)], { type: mime }), key)
   const result = await ve(`/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, {
@@ -149,21 +186,25 @@ export async function uploadLook(bytes: Buffer, mime: string) {
 }
 
 export async function deleteLook(url: string) {
-  const prefix = `${API}/api/storage/buckets/looks/objects/`
+  const prefix = LOOK_PREFIX
   if (!url.startsWith(prefix)) return
   const key = url.slice(prefix.length).split("?")[0]
-  if (key) await ve(`/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, { method: "DELETE" })
+  if (key) {
+    const result = await ve(`/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, { method: "DELETE" })
+    if (!result.ok && result.status !== 404) throw new ServiceError("照片清理失败，稍后可重试。")
+  }
 }
 
 // 云端存储桶的公开读在平台侧不生效，匿名取图会 401，所以由服务端带着密钥代取。
 export async function readLook(key: string) {
   const required = apiKey()
-  if (!required) return null
-  const response = await fetch(`${API}/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, {
+  if (!required) throw new ServiceError("暂时连不上服务器。")
+  const response = await fetch(`${LOOK_PREFIX}${encodeURIComponent(key)}`, {
     headers: { authorization: `Bearer ${required}` },
     cache: "no-store",
-  })
-  if (!response.ok) return null
+  }).catch(() => { throw new ServiceError("照片读取失败，请重试。") })
+  if (response.status === 404) return null
+  if (!response.ok) throw new ServiceError("照片读取失败，请重试。")
   const bytes = Buffer.from(await response.arrayBuffer())
   return { bytes, contentType: response.headers.get("content-type") || "image/jpeg" }
 }
@@ -188,6 +229,9 @@ export async function loginWithWechatCode(code: string) {
   const password = `${createHmac("sha256", secret).update(session.openid).digest("base64url").slice(0, 32)}Aa1`
   let logged = await loginAccount(email, password)
   if (!logged.ok) {
+    if (logged.status !== 401 && logged.status !== 404) {
+      return { ok: false as const, status: logged.status >= 500 ? 503 : logged.status, message: "微信账号登录暂不可用，请重试。" }
+    }
     const created = await ve("/api/auth/admin/users", {
       method: "POST",
       body: JSON.stringify({
@@ -198,7 +242,7 @@ export async function loginWithWechatCode(code: string) {
       }),
     })
     if (!created.ok && created.status !== 409) {
-      return { ok: false as const, status: created.status, message: "微信身份没能写进账号库。" }
+      return { ok: false as const, status: created.status, message: "微信身份没能关联现有 Auth。" }
     }
     logged = await loginAccount(email, password)
   }

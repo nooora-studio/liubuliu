@@ -1,6 +1,9 @@
 import { clearSession } from "@/lib/session"
+import { authHandle, json } from "@/app/api/_shared"
 
 export async function POST() {
-  await clearSession()
-  return Response.json({ ok: true })
+  return authHandle(async () => {
+    await clearSession()
+    return json({ ok: true })
+  })
 }

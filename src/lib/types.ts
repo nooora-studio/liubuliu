@@ -17,6 +17,7 @@ export type Kind = "keep" | "style" | "both"
 export type Stance = "keep" | "return" | "style"
 export type Vote = "keep" | "return"
 export type Decision = "kept" | "returned"
+export type ReturnStatus = "known" | "unknown" | "unavailable"
 
 export type Opinion = {
   id: string
@@ -26,6 +27,7 @@ export type Opinion = {
   text: string
   mine?: boolean
   supplement?: boolean
+  parentId?: string | null
 }
 
 export type Post = {
@@ -51,6 +53,12 @@ export type Post = {
   decision: Decision | null
   mine: boolean
   myVote: Vote | null
+  brand?: string
+  desiredEffect?: string
+  returnStatus?: ReturnStatus
+  returnDeadline?: string | null
+  votesClosedAt?: string | null
+  decisionReason?: string
 }
 
 export type Persisted = {

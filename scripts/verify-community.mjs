@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
 import vm from "node:vm"
-import ts from "typescript"
+import { execFileSync } from "node:child_process"
 import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 import { fileURLToPath } from "node:url"
@@ -88,56 +88,8 @@ async function miniChecks() {
 }
 
 async function serverChecks() {
-  const tables = { posts: [], post_images: [], opinions: [], votes: [] }
-  let uploadCalls = 0, failAt = 0
-  const removed = []
-  const backend = {
-    rows: async (table, query = "") => {
-      const id = query.match(/[?&]id=eq\.([^&]+)/)?.[1]
-      return tables[table].filter((row) => !id || row.id === id)
-    },
-    insertRow: async (table, row) => { tables[table].push(row); return { ok: true } },
-    deleteRows: async (table, query) => {
-      const id = query.slice("id=eq.".length)
-      tables[table] = tables[table].filter((row) => row.id !== id)
-      return { ok: true }
-    },
-    uploadLook: async () => ++uploadCalls === failAt ? "" : `https://vectoree.ai/api/storage/buckets/looks/objects/${randomUUID()}.png`,
-    deleteLook: async (url) => removed.push(url),
-  }
-  const loadedModule = { exports: {} }
-  const code = ts.transpileModule(fs.readFileSync(`${root}/src/lib/community-data.ts`, "utf8"), {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText
-  vm.runInNewContext(code, { module: loadedModule, exports: loadedModule.exports, require: () => backend, Buffer, crypto: { randomUUID }, Date })
-  const api = loadedModule.exports
-  const account = { id: "test-owner", name: "作者", email: "" }
-  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jD1sAAAAASUVORK5CYII="
-  const post = { id: randomUUID(), title: "多图测试帖子", story: "第一张是试穿的效果，第二张是目标风格。", category: "上衣", illustration: "knit", kind: "both", images: [png, png] }
-  assert.equal(await api.createPost(account, post), "")
-  assert.equal(tables.post_images.length, 2)
-  let payload = await api.communityPayload(account)
-  assert.equal(payload.posts[0].images.length, 2)
-  assert.equal(payload.posts[0].image, payload.posts[0].images[0])
-  assert.equal(await api.addCloudOpinion(account, { postId: post.id, stance: "return", text: "补充我的想法" }), "")
-  payload = await api.communityPayload(null)
-  assert.equal(payload.posts[0].opinions[0].supplement, true, "访客也应看到作者补充标记")
-  assert.equal(await api.castVote(account, post.id, "keep"), "不能给自己的衣服投票。")
-  assert.equal(await api.createPost(account, post), "", "重复提交不增加图片")
-  assert.equal(tables.post_images.length, 2)
-  const baseline = uploadCalls
-  assert.ok(await api.createPost(account, { ...post, id: randomUUID(), images: [png, "broken"] }))
-  assert.equal(uploadCalls, baseline, "全部图片需先验证再上传")
-  assert.ok(await api.createPost(account, { ...post, id: randomUUID(), images: Array(10).fill(png) }))
-  failAt = uploadCalls + 2
-  assert.ok(await api.createPost(account, { ...post, id: randomUUID() }))
-  assert.equal(tables.posts.length, 1)
-  assert.equal(removed.length, 1, "后续上传失败应回收本次已上传图片")
-  assert.equal(tables.post_images.length, 2, "失败不能删掉其他帖子的图片")
-  tables.posts.push({ ...tables.posts[0], id: randomUUID(), image_url: tables.post_images[0].image_url })
-  payload = await api.communityPayload(account)
-  assert.equal(payload.posts[1].images.length, 1, "旧单图帖兼容")
-  console.log("PASS server: gallery persistence, owner label, vote guard, retry, validation, rollback, legacy image")
+  // 独立服务端套件完全接管 HTTP，保留原小程序回归入口。
+  execFileSync(process.execPath, [`${root}/scripts/verify-server.mjs`], { stdio: "inherit" })
 }
 
 miniChecks().then(serverChecks).catch((error) => { console.error(error); process.exitCode = 1 })
