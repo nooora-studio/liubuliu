@@ -3,7 +3,8 @@
     "pages/feed/feed",
     "pages/detail/detail",
     "pages/compose/compose",
-    "pages/me/me"
+    "pages/me/me",
+    "pages/login/login"
   ],
   "window": {
     "navigationBarTitleText": "留不留",

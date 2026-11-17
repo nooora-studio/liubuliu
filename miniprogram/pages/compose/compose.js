@@ -117,7 +117,7 @@ Page({
   clearPhoto() {
     this.setData({ image: "" })
   },
-  submit() {
+  async submit() {
     const title = this.data.title.trim()
     const story = this.data.story.trim()
     const errors = {}
@@ -134,9 +134,24 @@ Page({
       wx.showToast({ title: "还有没写完的", icon: "none" })
       return
     }
+    if (!store.session()) {
+      wx.navigateTo({ url: "/pages/login/login" })
+      return
+    }
     const day = DAYS[this.data.dayIndex]
+    let image = ""
+    if (this.data.image) {
+      image = await new Promise((resolve) => {
+        wx.getFileSystemManager().readFile({
+          filePath: this.data.image,
+          encoding: "base64",
+          success: (res) => resolve(`data:image/jpeg;base64,${res.data}`),
+          fail: () => resolve(""),
+        })
+      })
+    }
     const post = {
-      id: `mine-${Date.now()}`,
+      id: store.uuid(),
       author: "我",
       city: "",
       postedLabel: "刚刚",
@@ -150,7 +165,7 @@ Page({
       channel: this.data.channel.trim().slice(0, 16),
       daysLeft: day ? day.value : 3,
       illustration: this.data.illustration,
-      image: this.data.image || "",
+      image,
       keepVotes: 0,
       returnVotes: 0,
       opinions: [],
@@ -158,7 +173,12 @@ Page({
       mine: true,
       myVote: null,
     }
-    store.addPost(post)
+    const saved = await store.request("/api/community/posts", { method: "POST", data: post })
+    if (store.loginWall(saved.statusCode)) return
+    if (saved.statusCode >= 400) {
+      wx.showToast({ title: (saved.data && saved.data.message) || "没有发出去", icon: "none" })
+      return
+    }
     wx.redirectTo({ url: `/pages/detail/detail?id=${post.id}` })
   },
 })

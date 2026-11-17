@@ -2,9 +2,11 @@
 
 import Link from "next/link"
 import { buttonVariants } from "@/components/ui/button"
+import { useCommunity } from "@/lib/community"
 import { cn } from "cn"
 
 export function SiteHeader() {
+  const { user } = useCommunity()
   return (
     <header className="border-b border-foreground/10">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
@@ -18,11 +20,8 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <Link
-            href="/me"
-            className="px-2 py-2 text-sm text-foreground/80 hover:text-foreground"
-          >
-            我的纠结
+          <Link href={user ? "/me" : "/login"} className="px-2 py-2 text-sm text-foreground/80 hover:text-foreground">
+            {user ? user.name : "登录"}
           </Link>
           <Link href="/new" className={cn(buttonVariants({ size: "lg" }), "h-10 px-3 sm:px-4")}>
             <span className="sm:hidden">发一条</span>

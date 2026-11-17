@@ -2,6 +2,12 @@
   margin-bottom: 20rpx;
 }
 
+.hero {
+  width: 56%;
+  max-width: 420rpx;
+  margin: 0 auto;
+}
+
 .item-line,
 .story,
 .body {

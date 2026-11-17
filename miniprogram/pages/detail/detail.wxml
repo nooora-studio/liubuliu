@@ -6,7 +6,9 @@
 
 <view class="page" wx:elif="{{post}}">
   <view class="muted back" bindtap="back">返回社区</view>
-  <look illustration="{{post.illustration}}" image="{{post.image}}" category="{{post.category}}" />
+  <view class="hero">
+    <look illustration="{{post.illustration}}" image="{{post.image}}" category="{{post.category}}" />
+  </view>
   <view class="item-line">{{post.item || post.category}} · {{post.priceText}}{{post.channel ? ' · ' + post.channel : ''}}</view>
   <view class="tags">
     <text class="tag tag-{{post.tone}}">{{post.deadline}}</text>

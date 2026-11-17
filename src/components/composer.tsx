@@ -65,7 +65,7 @@ export function Composer() {
     }
   }
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault()
     const nextErrors: Record<string, string> = {}
     const cleanTitle = title.trim()
@@ -84,7 +84,7 @@ export function Composer() {
     if (Object.keys(nextErrors).length > 0) return
 
     const post: Post = {
-      id: `mine-${crypto.randomUUID()}`,
+      id: crypto.randomUUID(),
       author: "我",
       city: "",
       postedLabel: "刚刚",
@@ -106,8 +106,8 @@ export function Composer() {
       mine: true,
       myVote: null,
     }
-    addPost(post)
-    router.push(`/post/${post.id}`)
+    const saved = await addPost(post)
+    if (saved) router.push(`/post/${post.id}`)
   }
 
   return (
@@ -129,7 +129,7 @@ export function Composer() {
         <div className="mt-4">
           <p className="text-sm font-medium">照片</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            只留在这台浏览器里，不会上传。没有照片就先选一张示意图，把纠结说清楚。
+            登录之后，照片会上传到云端，别人才能看见。没有照片就先选一张示意图。
           </p>
           <div className="mt-2">
             <label

@@ -7,7 +7,7 @@
 .sheet {
   width: 100%;
   height: 0;
-  padding-top: 125%;
+  padding-top: 100%;
   background: #efe8dc;
   position: relative;
   overflow: hidden;

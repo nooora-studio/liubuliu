@@ -44,8 +44,8 @@ export function PostDetail({ id }: { id: string }) {
   if (!post && !hydrated) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="font-serif text-2xl">正在从这台浏览器里找这条纠结</p>
-        <p className="mt-2 text-sm text-muted-foreground">你自己发的帖子存在本地，打开需要一瞬间。</p>
+        <p className="font-serif text-2xl">正在从云端找这条纠结</p>
+        <p className="mt-2 text-sm text-muted-foreground">你自己发的帖子跟账号走，打开需要一瞬间。</p>
       </div>
     )
   }
@@ -53,9 +53,9 @@ export function PostDetail({ id }: { id: string }) {
   if (!post) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="font-serif text-3xl">这条纠结不在这台浏览器里</p>
+        <p className="font-serif text-3xl">这条纠结不在社区里</p>
         <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          示例帖子一直都在。你自己发的如果清掉了，或者换了浏览器，就找不回来。
+          示例帖子一直都在。你自己发的如果还没登录就写过，不会出现在云端。
         </p>
         <Link href="/" className="mt-6 inline-block text-sm underline underline-offset-4">
           回到社区
@@ -286,7 +286,7 @@ function OpinionSection({
   opinions: { id: string; author: string; city: string; stance: Stance; text: string; mine?: boolean }[]
   displayName: string
   owner: boolean
-  onSubmit: (input: { author: string; stance: Stance; text: string }) => void
+  onSubmit: (input: { author: string; stance: Stance; text: string }) => Promise<boolean>
   onRemove: (opinionId: string) => void
 }) {
   const [stance, setStance] = useState<Stance>("style")
@@ -295,15 +295,17 @@ function OpinionSection({
   const [error, setError] = useState<string | null>(null)
   const author = authorDraft ?? displayName
 
-  function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (text.trim().length < 4) {
       setError("至少写一句具体的。四个字看不出你在说哪一件。")
       return
     }
-    onSubmit({ author, stance, text })
-    setText("")
-    setError(null)
+    const saved = await onSubmit({ author, stance, text })
+    if (saved) {
+      setText("")
+      setError(null)
+    }
   }
 
   return (

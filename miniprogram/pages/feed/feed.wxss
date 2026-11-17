@@ -35,6 +35,22 @@
   margin-bottom: 24rpx;
 }
 
+.row-card {
+  display: flex;
+  gap: 16rpx;
+  align-items: flex-start;
+}
+
+.thumb {
+  width: 168rpx;
+  flex: none;
+}
+
+.copy {
+  flex: 1;
+  min-width: 0;
+}
+
 .tags {
   display: flex;
   align-items: center;

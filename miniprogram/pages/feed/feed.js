@@ -64,8 +64,9 @@ Page({
   onShow() {
     this.refresh()
   },
-  refresh() {
-    const visible = selectVisible(store.posts(), this.data.filter, this.data.sort)
+  async refresh() {
+    const loaded = await store.loadFeed()
+    const visible = selectVisible(loaded.posts, this.data.filter, this.data.sort)
     let featured = null
     if (this.data.filter === "all" && this.data.sort === "urgent") {
       const candidates = visible

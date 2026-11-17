@@ -1,24 +1,14 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { PostCard } from "@/components/post-card"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { buttonVariants } from "@/components/ui/button"
 import { useCommunity } from "@/lib/community"
 import { cn } from "cn"
 
 export function MeScreen() {
-  const { posts, hydrated, clearMine } = useCommunity()
-  const [open, setOpen] = useState(false)
+  const { posts, hydrated, user, logout } = useCommunity()
   const mine = posts.filter((post) => post.mine)
   const helped = posts.filter(
     (post) => !post.mine && (post.myVote || post.opinions.some((opinion) => opinion.mine))
@@ -27,8 +17,8 @@ export function MeScreen() {
   if (!hydrated) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="font-serif text-2xl">正在翻你这台浏览器里的记录</p>
-        <p className="mt-2 text-sm text-muted-foreground">投票、意见和你发过的帖子都在本地。</p>
+        <p className="font-serif text-2xl">正在从云端翻你的记录</p>
+        <p className="mt-2 text-sm text-muted-foreground">投票、意见和你发过的帖子都跟账号走。</p>
       </div>
     )
   }
@@ -39,37 +29,20 @@ export function MeScreen() {
         <div className="max-w-xl">
           <h1 className="font-serif text-3xl tracking-tight sm:text-4xl">我的纠结</h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            这里只有这台浏览器记得的东西。示例帖子不算你的。清掉之后，你发的、投的、写的都会消失。
+            {user
+              ? `${user.name}，${user.email}。你发的、投的、写的都记在这个账号里。退出只是这台设备不再登录，云端的内容还在。`
+              : "还没登录。示例帖子不算你的。登录之后，你发的纠结会跟账号走。"}
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex h-10 items-center border border-foreground/20 px-3 text-sm">
-            清掉本地记录
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-serif text-xl">清掉这台浏览器里的记录</DialogTitle>
-              <DialogDescription>
-                你发的帖、投的票、写的意见会消失。示例纠结还在。
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" className="h-10" onClick={() => setOpen(false)}>
-                先留着
-              </Button>
-              <Button
-                type="button"
-                className="h-10 bg-return text-background hover:bg-return/90"
-                onClick={() => {
-                  clearMine()
-                  setOpen(false)
-                }}
-              >
-                清掉
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {user ? (
+          <Button type="button" variant="outline" className="h-10" onClick={() => void logout()}>
+            退出登录
+          </Button>
+        ) : (
+          <Link href="/login" className={cn(buttonVariants({ variant: "outline" }), "inline-flex h-10 px-3")}>
+            登录
+          </Link>
+        )}
       </div>
 
       <section className="mt-8">

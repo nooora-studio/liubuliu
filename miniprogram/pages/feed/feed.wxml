@@ -29,8 +29,9 @@
   <block wx:else>
     <view wx:if="{{featured}}">
       <view class="section">最难拍板</view>
-      <view class="card post" data-id="{{featured.id}}" bindtap="open">
-        <look illustration="{{featured.illustration}}" image="{{featured.image}}" category="{{featured.category}}" />
+      <view class="card post row-card" data-id="{{featured.id}}" bindtap="open">
+        <view class="thumb"><look illustration="{{featured.illustration}}" image="{{featured.image}}" category="{{featured.category}}" framed="{{false}}" /></view>
+        <view class="copy">
         <view class="tags">
           <text class="tag tag-{{featured.tone}}">{{featured.deadline}}</text>
           <text class="muted tiny">{{featured.kindLabel}}</text>
@@ -47,13 +48,15 @@
           <view class="bar-keep" style="width: {{featured.keepShare}}%;"></view>
           <view class="bar-return" style="width: {{featured.returnShare}}%;"></view>
         </view>
+        </view>
       </view>
     </view>
 
     <view wx:if="{{rest.length}}">
       <view class="section" wx:if="{{featured}}">其余的纠结</view>
-      <view class="card post" wx:for="{{rest}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-        <look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" />
+      <view class="card post row-card" wx:for="{{rest}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+        <view class="thumb"><look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" framed="{{false}}" /></view>
+        <view class="copy">
         <view class="tags">
           <text class="tag tag-{{item.tone}}">{{item.deadline}}</text>
           <text class="muted tiny">{{item.kindLabel}}</text>
@@ -72,10 +75,11 @@
           <view class="bar-return" style="width: {{item.returnShare}}%;"></view>
         </view>
         <view class="muted tiny foot">{{item.opinions.length}} 条具体意见 · {{item.who}}</view>
+        </view>
       </view>
     </view>
   </block>
 
-  <view class="muted note">带「示意图」的是示例纠结。你发的帖、投的票和写的意见只存在这台手机的微信里。</view>
+  <view class="muted note">带「示意图」的是示例纠结。登录之后，发帖和投票记在云端。配图收成小图，点进去再看大一点。</view>
   <dock current="feed" />
 </view>

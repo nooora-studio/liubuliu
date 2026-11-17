@@ -5,10 +5,13 @@ Page({
   data: {
     mine: [],
     helped: [],
+    user: null,
   },
-  onShow() {
-    const all = store.posts().map(decorate)
+  async onShow() {
+    const loaded = await store.loadFeed()
+    const all = loaded.posts.map(decorate)
     this.setData({
+      user: loaded.user,
       mine: all.filter((post) => post.mine),
       helped: all.filter((post) => !post.mine && (post.myVote || post.opinions.some((opinion) => opinion.mine))),
     })
@@ -16,18 +19,9 @@ Page({
   open(event) {
     wx.navigateTo({ url: `/pages/detail/detail?id=${event.currentTarget.dataset.id}` })
   },
-  clear() {
-    wx.showModal({
-      title: "清掉这台手机里的记录",
-      content: "你发的帖、投的票、写的意见会消失。示例纠结还在。",
-      confirmText: "清掉",
-      cancelText: "先留着",
-      confirmColor: "#9d3428",
-      success: (res) => {
-        if (!res.confirm) return
-        store.clearMine()
-        this.onShow()
-      },
-    })
+  logout() {
+    store.saveSession(null)
+    store.request("/api/auth/logout", { method: "POST" })
+    this.onShow()
   },
 })

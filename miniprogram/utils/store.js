@@ -126,6 +126,91 @@ function clearMine() {
   save(emptyPersisted())
 }
 
+const API_BASE = "https://liu-bu-liu.apps.grok.bot"
+const AUTH_KEY = "liubuliu.auth"
+
+function session() {
+  try {
+    return wx.getStorageSync(AUTH_KEY) || null
+  } catch (error) {
+    return null
+  }
+}
+
+function saveSession(value) {
+  if (!value) wx.removeStorageSync(AUTH_KEY)
+  else wx.setStorageSync(AUTH_KEY, value)
+}
+
+function request(pathname, options) {
+  const current = session()
+  return new Promise((resolve) => {
+    wx.request({
+      url: API_BASE + pathname,
+      method: (options && options.method) || "GET",
+      data: options && options.data,
+      header: {
+        "content-type": "application/json",
+        Authorization: current && current.accessToken ? `Bearer ${current.accessToken}` : "",
+        "X-Refresh-Token": current && current.refreshToken ? current.refreshToken : "",
+      },
+      success(res) {
+        const data = res.data || {}
+        if (data.refreshed && data.refreshed.accessToken) {
+          saveSession({
+            accessToken: data.refreshed.accessToken,
+            refreshToken: data.refreshed.refreshToken,
+            user: current && current.user,
+          })
+        }
+        if (data.accessToken && data.refreshToken) {
+          saveSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user: data.user || null })
+        }
+        resolve(res)
+      },
+      fail() {
+        resolve({ statusCode: 0, data: null })
+      },
+    })
+  })
+}
+
+function applySeed(post, seed) {
+  return Object.assign({}, post, {
+    keepVotes: post.keepVotes + ((seed.extraKeep && seed.extraKeep[post.id]) || 0),
+    returnVotes: post.returnVotes + ((seed.extraReturn && seed.extraReturn[post.id]) || 0),
+    opinions: (post.opinions || []).concat((seed.opinions && seed.opinions[post.id]) || []),
+    myVote: (seed.votes && seed.votes[post.id]) || post.myVote || null,
+  })
+}
+
+async function loadFeed() {
+  const res = await request("/api/community")
+  if (!res.data || !Array.isArray(res.data.posts)) {
+    return { user: (session() && session().user) || null, posts: posts(), offline: true }
+  }
+  const seed = res.data.seed || {}
+  return {
+    user: res.data.user || null,
+    posts: res.data.posts.concat(SEED.map((post) => applySeed(post, seed))),
+    offline: false,
+  }
+}
+
+function loginWall(status) {
+  if (status !== 401) return false
+  wx.navigateTo({ url: "/pages/login/login" })
+  return true
+}
+
+function uuid() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const rand = (Math.random() * 16) | 0
+    const value = char === "x" ? rand : (rand & 0x3) | 0x8
+    return value.toString(16)
+  })
+}
+
 module.exports = {
   posts,
   load,
@@ -135,4 +220,10 @@ module.exports = {
   addPost,
   decide,
   clearMine,
+  session,
+  saveSession,
+  request,
+  loadFeed,
+  loginWall,
+  uuid,
 }

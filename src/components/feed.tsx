@@ -46,7 +46,7 @@ function splitDistance(post: Post) {
 }
 
 export function Feed() {
-  const { posts } = useCommunity()
+  const { posts, error, user } = useCommunity()
   const [filter, setFilter] = useState<FilterId>("all")
   const [sort, setSort] = useState<SortId>("urgent")
 
@@ -158,7 +158,8 @@ export function Feed() {
       )}
 
       <p className="mt-10 border-t border-dashed border-foreground/15 pt-4 text-sm leading-6 text-muted-foreground">
-        带「示意图」的是示例纠结，方便你先看别人怎么问、别人怎么说。你发的帖、投的票和写的意见只存在这台浏览器里，换一台设备就没有了。照片也不会上传到别处。
+        带「示意图」的是示例纠结。{user ? "你登录后发的帖、投的票和写的意见记在云端。" : "登录之后，你发的帖和投票才会记在云端，换设备也能看见。"}
+        {error ? <span className="mt-2 block text-return">{error}</span> : null}
       </p>
     </div>
   )

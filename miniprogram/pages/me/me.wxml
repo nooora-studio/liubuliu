@@ -1,7 +1,8 @@
 <view class="page">
   <view class="h1">我的纠结</view>
-  <view class="muted intro">这里只有这台手机的微信记得的东西。示例帖子不算你的。清掉之后，你发的、投的、写的都会消失。</view>
-  <view class="btn btn-line" bindtap="clear">清掉本地记录</view>
+  <view class="muted intro">{{user ? user.name + ' 已登录。发帖、投票和意见记在这个账号里。' : '还没登录。示例帖子不用登录也能看。'}}</view>
+  <view wx:if="{{user}}" class="btn btn-line" bindtap="logout">退出登录</view>
+  <navigator wx:else class="btn" url="/pages/login/login" hover-class="none">登录</navigator>
 
   <view class="section">我发出去的</view>
   <view wx:if="{{mine.length == 0}}" class="card empty">
