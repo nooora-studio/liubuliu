@@ -31,21 +31,17 @@ const DAYS = [
 
 function keepFile(tempPath) {
   return new Promise((resolve) => {
-    if (!tempPath) {
-      resolve("")
-      return
-    }
-    wx.compressImage({
+    wx.getImageInfo({
       src: tempPath,
-      quality: 60,
-      success(compressed) {
-        const src = compressed.tempFilePath || tempPath
-        const target = `${wx.env.USER_DATA_PATH}/look-${Date.now()}.jpg`
-        wx.getFileSystemManager().saveFile({
-          tempFilePath: src,
-          filePath: target,
-          success: () => resolve(target),
-          fail: () => resolve(src),
+      success(info) {
+        const scale = Math.min(1, 1200 / Math.max(info.width, info.height))
+        wx.compressImage({
+          src: tempPath,
+          quality: 60,
+          compressedWidth: Math.max(1, Math.round(info.width * scale)),
+          compressedHeight: Math.max(1, Math.round(info.height * scale)),
+          success: (compressed) => resolve(compressed.tempFilePath || tempPath),
+          fail: () => resolve(tempPath),
         })
       },
       fail: () => resolve(tempPath),
@@ -63,7 +59,9 @@ Page({
     category: "上衣",
     illustration: "knit",
     image: "",
+    images: [],
     reading: false,
+    submitting: false,
     title: "",
     story: "",
     item: "",
@@ -72,6 +70,13 @@ Page({
     dayIndex: 2,
     errors: {},
   },
+  onShow() {
+    // 从登录页回来时，如果有待提交的草稿，自动重提
+    if (this.pendingSubmit && store.session()) {
+      this.pendingSubmit = false
+      this.submit()
+    }
+  },
   setKind(event) {
     this.setData({ kind: event.currentTarget.dataset.id })
   },
@@ -79,7 +84,7 @@ Page({
     this.setData({ category: event.currentTarget.dataset.id })
   },
   setIllustration(event) {
-    this.setData({ illustration: event.currentTarget.dataset.id, image: "" })
+    this.setData({ illustration: event.currentTarget.dataset.id })
   },
   setDay(event) {
     this.setData({ dayIndex: Number(event.currentTarget.dataset.index) })
@@ -100,24 +105,39 @@ Page({
     this.setData({ channel: event.detail.value })
   },
   choosePhoto() {
+    if (this.data.reading || this.data.submitting || this.data.images.length >= 9) return
+    this.setData({ reading: true })
     wx.chooseMedia({
-      count: 1,
+      count: 9 - this.data.images.length,
       mediaType: ["image"],
       sourceType: ["album", "camera"],
       sizeType: ["compressed"],
       success: async (res) => {
-        const file = res.tempFiles && res.tempFiles[0]
-        if (!file) return
-        this.setData({ reading: true })
-        const image = await keepFile(file.tempFilePath)
-        this.setData({ image, reading: false })
+        const files = (res.tempFiles || []).slice(0, 9 - this.data.images.length)
+        const added = await Promise.all(files.map((file) => keepFile(file.tempFilePath)))
+        const images = this.data.images.concat(added)
+        this.setData({ images, image: images[0] || "", reading: false })
       },
+      fail: () => this.setData({ reading: false }),
     })
   },
-  clearPhoto() {
-    this.setData({ image: "" })
+  removePhoto(event) {
+    if (this.data.reading || this.data.submitting) return
+    const images = this.data.images.filter((_, index) => index !== Number(event.currentTarget.dataset.index))
+    this.setData({ images, image: images[0] || "" })
+  },
+  makeCover(event) {
+    if (this.data.reading || this.data.submitting) return
+    const images = this.data.images.slice()
+    const index = Number(event.currentTarget.dataset.index)
+    images.unshift(images.splice(index, 1)[0])
+    this.setData({ images, image: images[0] })
+  },
+  previewPhoto(event) {
+    wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.images })
   },
   async submit() {
+    if (this.data.reading || this.data.submitting) return
     const title = this.data.title.trim()
     const story = this.data.story.trim()
     const errors = {}
@@ -135,20 +155,41 @@ Page({
       return
     }
     if (!store.session()) {
-      wx.navigateTo({ url: "/pages/login/login" })
+      this.pendingSubmit = true
+      wx.showModal({
+        title: "先登录再发帖",
+        content: "你发的纠结会记在账号里，换设备也能看见。",
+        confirmText: "去登录",
+        success: (res) => {
+          if (res.confirm) wx.navigateTo({ url: "/pages/login/login" })
+          else this.pendingSubmit = false
+        },
+      })
       return
     }
     const day = DAYS[this.data.dayIndex]
-    let image = ""
-    if (this.data.image) {
-      image = await new Promise((resolve) => {
+    this.setData({ submitting: true })
+    let images
+    try {
+      images = await Promise.all(this.data.images.map((filePath, index) => new Promise((resolve, reject) => {
         wx.getFileSystemManager().readFile({
-          filePath: this.data.image,
+          filePath,
           encoding: "base64",
-          success: (res) => resolve(`data:image/jpeg;base64,${res.data}`),
-          fail: () => resolve(""),
+          success: (res) => {
+            if (!res.data || res.data.length > 933_336) {
+              reject(new Error(`第 ${index + 1} 张照片太大，压小一点或换一张`))
+              return
+            }
+            const mime = res.data.startsWith("iVBOR") ? "png" : res.data.startsWith("UklGR") ? "webp" : "jpeg"
+            resolve(`data:image/${mime};base64,${res.data}`)
+          },
+          fail: () => reject(new Error(`第 ${index + 1} 张照片读不出来，换一张试试`)),
         })
-      })
+      })))
+    } catch (error) {
+      this.setData({ submitting: false })
+      wx.showToast({ title: error.message, icon: "none" })
+      return
     }
     const post = {
       id: store.uuid(),
@@ -165,7 +206,8 @@ Page({
       channel: this.data.channel.trim().slice(0, 16),
       daysLeft: day ? day.value : 3,
       illustration: this.data.illustration,
-      image,
+      image: images[0] || "",
+      images,
       keepVotes: 0,
       returnVotes: 0,
       opinions: [],
@@ -174,8 +216,9 @@ Page({
       myVote: null,
     }
     const saved = await store.request("/api/community/posts", { method: "POST", data: post })
+    this.setData({ submitting: false })
     if (store.loginWall(saved.statusCode)) return
-    if (saved.statusCode >= 400) {
+    if (saved.statusCode === 0 || saved.statusCode >= 400) {
       wx.showToast({ title: (saved.data && saved.data.message) || "没有发出去", icon: "none" })
       return
     }

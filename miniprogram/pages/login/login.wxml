@@ -1,7 +1,7 @@
 <view class="page">
   <view class="h1">用微信登录</view>
-  <view class="muted intro">小程序默认走微信身份。Vectoree 本身没有微信登录，所以由这只小程序的后端拿登录码去换。还没填 AppID 和 AppSecret 时，可以先用邮箱。</view>
-  <view class="btn" bindtap="wechat">{{pending && mode == 'wechat' ? '正在跟微信确认…' : '微信登录'}}</view>
+  <view class="muted intro">用微信一键登录，或者用邮箱注册。登录之后，你发的和投的会记在账号里。</view>
+  <view class="btn btn-primary" bindtap="wechat">{{pending && mode == 'wechat' ? '正在跟微信确认…' : '微信登录'}}</view>
   <view wx:if="{{message && mode == 'wechat'}}" class="return tiny">{{message}}</view>
 
   <view class="section">或者用邮箱</view>
@@ -14,5 +14,5 @@
   <input wx:if="{{mode != 'verify'}}" class="field" password placeholder="密码，至少 8 位" value="{{password}}" bindinput="onPassword" />
   <input wx:else class="field" placeholder="8 位验证码" value="{{otp}}" maxlength="8" bindinput="onOtp" />
   <view wx:if="{{message && mode != 'wechat'}}" class="return tiny">{{message}}</view>
-  <view class="btn gap" bindtap="submit">{{pending && mode != 'wechat' ? '正在提交…' : '继续'}}</view>
+  <view class="btn btn-primary gap" bindtap="submit">{{pending && mode != 'wechat' ? '正在提交…' : '继续'}}</view>
 </view>

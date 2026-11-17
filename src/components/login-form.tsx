@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") || "/me"
   const [mode, setMode] = useState<"login" | "register" | "verify">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -34,10 +36,10 @@ export function LoginForm() {
       return
     }
     if (!response.ok) {
-      setMessage(data?.message || "没有完成。")
+      setMessage(data?.message || "没有成功，再试一次。")
       return
     }
-    router.push("/me")
+    router.push(redirect)
     router.refresh()
   }
 
@@ -45,7 +47,7 @@ export function LoginForm() {
     <form onSubmit={submit} className="mx-auto max-w-md px-4 py-8">
       <h1 className="font-serif text-3xl tracking-tight">{mode === "register" ? "注册" : mode === "verify" ? "验证邮箱" : "登录"}</h1>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
-        登录之后，你发的纠结、投的票和写的意见会记在云端，换一台设备还能看见。示例帖子不用登录也能看。
+        登录之后，你发的、投的、写的都记在账号里，换台设备也还在。示例不用登录也能看。
       </p>
       <div className="mt-6 flex gap-2 text-sm">
         <button type="button" className={mode === "login" ? "underline" : "text-muted-foreground"} onClick={() => setMode("login")}>
@@ -87,7 +89,7 @@ export function LoginForm() {
         )}
         {message ? <p className="text-sm text-return">{message}</p> : null}
         <Button type="submit" className="h-11" disabled={pending}>
-          {pending ? "正在提交…" : mode === "register" ? "注册并收验证码" : mode === "verify" ? "验证并进入" : "登录"}
+          {pending ? "正在提交…" : mode === "register" ? "注册并进入" : mode === "verify" ? "验证并进入" : "登录"}
         </Button>
       </div>
     </form>

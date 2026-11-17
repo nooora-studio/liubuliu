@@ -83,7 +83,7 @@ export function Feed() {
       <div className="max-w-2xl">
         <h1 className="font-serif text-3xl leading-tight tracking-tight sm:text-4xl">还挂在门后的衣服</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-          退货期短的排在前面。点进去投留或退，也可以只说怎么搭。只说好看帮不上忙，说具体一点。
+          都是别人拿不定主意的衣服。快到退货期的排前面，先帮他们看一眼——投一票，或者说一句你实际看到的。
         </p>
       </div>
 
@@ -126,9 +126,9 @@ export function Feed() {
 
       {visible.length === 0 ? (
         <div className="mt-8 border border-dashed border-foreground/20 bg-card px-6 py-16 text-center">
-          <p className="font-serif text-2xl">这个筛子底下是空的</p>
+          <p className="font-serif text-2xl">这里暂时没有这样的衣服</p>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-            换一个看，或者把你挂在门后的那件发上来。
+            换个条件看看，或者把你那件拿不定的发上来。
           </p>
           <Link href="/new" className={cn(buttonVariants(), "mt-5 inline-flex h-10 px-4")}>
             发一条纠结
@@ -145,7 +145,7 @@ export function Feed() {
           {rest.length > 0 ? (
             <section>
               {featured ? (
-                <h2 className="mb-3 text-xs tracking-[0.2em] text-muted-foreground">其余的纠结</h2>
+                <h2 className="mb-3 text-xs tracking-[0.2em] text-muted-foreground">其他还在犹豫的</h2>
               ) : null}
               <div className="grid gap-4 md:grid-cols-2">
                 {rest.map((post) => (
@@ -158,7 +158,7 @@ export function Feed() {
       )}
 
       <p className="mt-10 border-t border-dashed border-foreground/15 pt-4 text-sm leading-6 text-muted-foreground">
-        带「示意图」的是示例纠结。{user ? "你登录后发的帖、投的票和写的意见记在云端。" : "登录之后，你发的帖和投票才会记在云端，换设备也能看见。"}
+        标着「示意图」的是示例。{user ? "你发的、投的、写的，都记在账号里。" : "登录之后，你发的和投的会记在账号里，换设备也还在。"}
         {error ? <span className="mt-2 block text-return">{error}</span> : null}
       </p>
     </div>

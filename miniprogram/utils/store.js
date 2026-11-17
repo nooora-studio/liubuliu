@@ -126,7 +126,8 @@ function clearMine() {
   save(emptyPersisted())
 }
 
-const API_BASE = "https://liu-bu-liu.apps.grok.bot"
+// 云后端：Next.js BFF（密钥只在服务端，内部再调 Vectoree）。本地预览走 127.0.0.1，线上换成部署域名。
+const API_BASE = "http://127.0.0.1:4261"
 const AUTH_KEY = "liubuliu.auth"
 
 function session() {
@@ -184,6 +185,13 @@ function applySeed(post, seed) {
   })
 }
 
+// 取图走自家代理，返回的是相对路径，小程序里要补成绝对地址才能渲染。
+function withImageBase(post) {
+  const absolute = (image) => image && image.indexOf("/") === 0 ? API_BASE + image : image
+  const images = (post.images && post.images.length ? post.images : post.image ? [post.image] : []).map(absolute)
+  return Object.assign({}, post, { image: images[0] || "", images })
+}
+
 async function loadFeed() {
   const res = await request("/api/community")
   if (!res.data || !Array.isArray(res.data.posts)) {
@@ -192,7 +200,7 @@ async function loadFeed() {
   const seed = res.data.seed || {}
   return {
     user: res.data.user || null,
-    posts: res.data.posts.concat(SEED.map((post) => applySeed(post, seed))),
+    posts: res.data.posts.map(withImageBase).concat(SEED.map((post) => applySeed(post, seed))),
     offline: false,
   }
 }

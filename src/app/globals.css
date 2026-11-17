@@ -52,30 +52,34 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* 宣纸 · 赤陶 —— 唯一视觉方案
+   暖白打底 + 暖墨文字 + 赤陶强调；留=灰绿，退=赤陶。
+   令牌与 miniprogram/app.wxss 一一对应。 */
 :root {
   --font-sans: "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --font-serif: "Noto Serif CJK SC", "Songti SC", "STSong", "PMingLiU", serif;
-  --background: #e7e0d2;
-  --foreground: #1c1915;
-  --card: #f7f3eb;
-  --card-foreground: #1c1915;
-  --popover: #f7f3eb;
-  --popover-foreground: #1c1915;
-  --primary: #1c1915;
-  --primary-foreground: #f7f3eb;
-  --secondary: #efe6d8;
-  --secondary-foreground: #1c1915;
-  --muted: #efe6d8;
-  --muted-foreground: #5c5348;
-  --accent: #efe6d8;
-  --accent-foreground: #1c1915;
-  --destructive: #9d3428;
-  --border: #d9d0c2;
-  --input: #cfc4b4;
-  --ring: #8c6a3d;
-  --keep: #1f4d40;
-  --return: #9d3428;
-  --brass: #8c6a3d;
+  --background: #f5f1e9;
+  --foreground: #2a2622;
+  --card: #fdfbf7;
+  --card-foreground: #2a2622;
+  --popover: #fdfbf7;
+  --popover-foreground: #2a2622;
+  --primary: #a85b45;
+  --primary-foreground: #fdfbf7;
+  --secondary: #f2e3da;
+  --secondary-foreground: #2a2622;
+  --muted: #f1ece3;
+  --muted-foreground: #6e655a;
+  --accent: #f2e3da;
+  --accent-foreground: #2a2622;
+  --destructive: #a85b45;
+  --border: #e4dcd0;
+  --input: #e4dcd0;
+  --ring: #a85b45;
+  --keep: #5e7565;
+  --return: #a85b45;
+  /* 品牌赤陶，与 return / accent 同色（小程序里 brass 也是这个赤陶） */
+  --brass: #a85b45;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -136,9 +140,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(ellipse at 12% -10%, rgba(166, 132, 78, 0.18), transparent 42%),
-      radial-gradient(ellipse at 100% 0%, rgba(157, 52, 40, 0.06), transparent 34%);
   }
 }
 
@@ -147,11 +148,11 @@
 }
 
 .tape {
-  background-color: #d8c39a;
-  background-image: repeating-linear-gradient(90deg, #1c1915 0 1px, transparent 1px 7px);
+  background-color: #f2e3da;
+  background-image: repeating-linear-gradient(90deg, rgba(168, 91, 69, 0.5) 0 1px, transparent 1px 7px);
 }
 
 ::selection {
-  background: #e7c3b8;
-  color: #1c1915;
+  background: rgba(168, 91, 69, 0.22);
+  color: #2a2622;
 }

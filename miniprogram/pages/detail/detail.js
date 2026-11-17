@@ -1,20 +1,13 @@
 const store = require("../../utils/store")
 const { decorate } = require("../../utils/format")
 
-const STARTERS = [
-  { stance: "keep", text: "颜色比版型更值得留。白天拉到窗边再看一次，别只在暖光下判决。" },
-  { stance: "return", text: "和你已经有的太像，留着大概率不会拿出来穿。" },
-  { stance: "style", text: "别塞进裤子，下摆盖住胯最宽的位置会好看很多。" },
-  { stance: "style", text: "配深色直筒裤和一双乐福，别配运动鞋。" },
-  { stance: "keep", text: "肩线是对的。这件的价值在版型，不在花色。" },
-  { stance: "return", text: "这个价位如果还要犹豫，通常就是不会常穿。" },
-]
-
 Page({
   data: {
     missing: false,
     post: null,
-    starters: STARTERS,
+    sending: false,
+    loggedIn: false,
+    photoIndex: 0,
     author: "",
     text: "",
     stance: "style",
@@ -42,15 +35,21 @@ Page({
     this.setData({
       missing: false,
       post: decorate(found),
+      loggedIn: Boolean(loaded.user),
       author: this.data.author || saved || "",
     })
   },
   async vote(event) {
+    if (this.data.post.mine || this.data.post.decision) return
     const res = await store.request("/api/community/votes", {
       method: "POST",
       data: { postId: this.id, stance: event.currentTarget.dataset.stance },
     })
     if (store.loginWall(res.statusCode)) return
+    if (res.statusCode === 0 || res.statusCode >= 400) {
+      wx.showToast({ title: (res.data && res.data.message) || "网络没连上，再试一次", icon: "none" })
+      return
+    }
     this.refresh()
   },
   setStance(event) {
@@ -62,22 +61,29 @@ Page({
   onText(event) {
     this.setData({ text: event.detail.value })
   },
-  useStarter(event) {
-    const index = Number(event.currentTarget.dataset.index)
-    const starter = STARTERS[index]
-    this.setData({ stance: starter.stance, text: starter.text, error: "" })
+  onPhotoChange(event) {
+    this.setData({ photoIndex: event.detail.current })
+  },
+  previewPhoto(event) {
+    wx.previewImage({ current: event.currentTarget.dataset.url, urls: this.data.post.images })
+  },
+  login() {
+    wx.navigateTo({ url: "/pages/login/login" })
   },
   async send() {
+    if (this.data.sending) return
     if (this.data.text.trim().length < 4) {
-      this.setData({ error: "至少写一句具体的。" })
+      this.setData({ error: "再多写几个字，别人才知道你在说哪一件。" })
       return
     }
+    this.setData({ sending: true, error: "" })
     const res = await store.request("/api/community/opinions", {
       method: "POST",
-      data: { postId: this.id, text: this.data.text, author: this.data.author, stance: this.data.stance },
+      data: { postId: this.id, text: this.data.text, author: this.data.author, stance: this.data.post.mine ? "style" : this.data.stance },
     })
+    this.setData({ sending: false })
     if (store.loginWall(res.statusCode)) return
-    if (res.statusCode >= 400) {
+    if (res.statusCode === 0 || res.statusCode >= 400) {
       this.setData({ error: (res.data && res.data.message) || "意见没有写上。" })
       return
     }
@@ -87,6 +93,10 @@ Page({
   async withdraw(event) {
     const res = await store.request(`/api/community/opinions?id=${event.currentTarget.dataset.id}`, { method: "DELETE" })
     if (store.loginWall(res.statusCode)) return
+    if (res.statusCode === 0 || res.statusCode >= 400) {
+      wx.showToast({ title: "没有撤回，再试一次", icon: "none" })
+      return
+    }
     this.refresh()
   },
   decide() {
@@ -98,6 +108,10 @@ Page({
           data: { postId: this.id, decision: res.tapIndex === 0 ? "kept" : "returned" },
         })
         if (store.loginWall(saved.statusCode)) return
+        if (saved.statusCode === 0 || saved.statusCode >= 400) {
+          wx.showToast({ title: "结论没有记下，再试一次", icon: "none" })
+          return
+        }
         this.refresh()
       },
     })

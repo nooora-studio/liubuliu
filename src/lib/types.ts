@@ -25,6 +25,7 @@ export type Opinion = {
   stance: Stance
   text: string
   mine?: boolean
+  supplement?: boolean
 }
 
 export type Post = {
@@ -43,6 +44,7 @@ export type Post = {
   daysLeft: number | null
   illustration: Illustration
   image?: string
+  images?: string[]
   keepVotes: number
   returnVotes: number
   opinions: Opinion[]

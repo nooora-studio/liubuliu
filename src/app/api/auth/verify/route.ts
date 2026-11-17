@@ -15,5 +15,5 @@ export async function POST(request: Request) {
     return Response.json({ message: "验证码不对，或已经过期。" }, { status: 400 })
   }
   await writeSession(tokens)
-  return Response.json({ user: account })
+  return Response.json({ user: account, ...tokens })
 }

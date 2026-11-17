@@ -15,18 +15,18 @@
 
 .sort {
   margin-right: 24rpx;
-  color: #5c5348;
+  color: #6E655A;
   font-size: 26rpx;
 }
 
 .sort-on {
-  color: #1c1915;
-  border-bottom: 2rpx solid #8c6a3d;
+  color: #2A2622;
+  border-bottom: 2rpx solid #A85B45;
 }
 
 .section {
   margin: 8rpx 0 16rpx;
-  color: #5c5348;
+  color: #6E655A;
   font-size: 22rpx;
   letter-spacing: 6rpx;
 }
@@ -83,7 +83,7 @@
 }
 
 .brass {
-  color: #8c6a3d;
+  color: #A85B45;
 }
 
 .empty {

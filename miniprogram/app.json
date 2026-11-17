@@ -8,9 +8,9 @@
   ],
   "window": {
     "navigationBarTitleText": "留不留",
-    "navigationBarBackgroundColor": "#e7e0d2",
+    "navigationBarBackgroundColor": "#F5F1E9",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#e7e0d2",
+    "backgroundColor": "#F5F1E9",
     "backgroundTextStyle": "dark"
   },
   "style": "v2",

@@ -59,6 +59,7 @@ function decorate(post) {
   const result = verdict(post)
   return Object.assign({}, post, {
     image: post.image || "",
+    images: post.images && post.images.length ? post.images : post.image ? [post.image] : [],
     kindLabel: KIND_LABEL[post.kind],
     deadline: deadlineLabel(post),
     tone: deadlineTone(post),
@@ -80,7 +81,7 @@ function decorate(post) {
     who: `${post.author}${post.city ? ` · ${post.city}` : ""} · ${post.postedLabel}`,
     opinions: (post.opinions || []).map((opinion) =>
       Object.assign({}, opinion, {
-        stanceLabel: STANCE_LABEL[opinion.stance],
+        stanceLabel: opinion.supplement ? "作者补充" : STANCE_LABEL[opinion.stance],
         who: `${opinion.author}${opinion.city ? ` · ${opinion.city}` : ""}`,
       })
     ),

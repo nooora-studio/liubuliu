@@ -5,7 +5,12 @@
   <view wx:else class="sheet sheet-{{illustration}}"></view>
   <view class="cap">
     <text>{{category || "衣服"}}</text>
-    <text>{{image ? "实拍" : "示意图"}}</text>
+    <text>{{image ? "照片" : "示意图"}}</text>
   </view>
 </view>
-<view wx:else class="sheet sheet-{{illustration}}"></view>
+<view wx:else>
+  <view wx:if="{{image}}" class="photo-wrap">
+    <image class="photo" src="{{image}}" mode="aspectFill" />
+  </view>
+  <view wx:else class="sheet sheet-{{illustration}}"></view>
+</view>

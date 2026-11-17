@@ -59,7 +59,7 @@ Page({
       return
     }
     if (res.statusCode >= 400 || !res.data) {
-      this.setData({ message: (res.data && res.data.message) || "没有完成。" })
+      this.setData({ message: (res.data && res.data.message) || "没有成功，再试一次。" })
       return
     }
     wx.navigateBack({ fail: () => wx.reLaunch({ url: "/pages/feed/feed" }) })

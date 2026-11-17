@@ -38,7 +38,8 @@ export function isSafeImage(value: string) {
     value.startsWith("data:image/jpeg;base64,") ||
     value.startsWith("data:image/png;base64,") ||
     value.startsWith("data:image/webp;base64,") ||
-    value.startsWith("https://vectoree.ai/api/storage/buckets/looks/")
+    value.startsWith("https://vectoree.ai/api/storage/buckets/looks/") ||
+    value.startsWith("/api/looks/")
   )
 }
 

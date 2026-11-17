@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>真实照片 × 简约风格 · 压力测试</title>
+<style>
+:root{
+  --bg:#F5F1E9; --surface:#FDFBF7; --ink:#2A2622; --ink-2:#6E655A; --ink-3:#A0988A;
+  --line:#E4DCD0; --accent:#A85B45; --accent-soft:#F2E3DA; --keep:#5E7565; --return:#A85B45;
+  --shadow:0 1px 2px rgba(42,38,34,.04), 0 10px 28px rgba(42,38,34,.05);
+  --font-serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --font-sans:-apple-system,"PingFang SC","Noto Sans CJK SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;padding:48px 24px 72px;background:var(--bg);color:var(--ink);font-family:var(--font-sans);-webkit-font-smoothing:antialiased;}
+.shell{max-width:1240px;margin:0 auto;}
+.eyebrow{display:flex;align-items:center;gap:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin:0 0 16px;}
+.eyebrow::before{content:"";width:22px;height:2px;background:var(--accent);}
+h1{font-family:var(--font-serif);font-weight:500;font-size:clamp(28px,4vw,40px);letter-spacing:.02em;line-height:1.2;margin:0 0 14px;}
+.lede{font-size:13px;line-height:1.8;color:var(--ink-2);max-width:760px;margin:0;}
+
+/* 原图参照 */
+.reference{display:flex;gap:22px;align-items:center;margin:32px 0 36px;padding:18px 22px;background:var(--surface);border:1px solid var(--line);border-radius:10px;}
+.reference img{width:104px;height:150px;object-fit:cover;object-position:50% 30%;border-radius:5px;border:1px solid var(--line);}
+.reference .txt h2{font-size:13px;margin:0 0 8px;font-weight:600;}
+.reference .txt p{font-size:12px;line-height:1.75;color:var(--ink-2);margin:0;}
+.reference .txt .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.reference .txt .tags span{font-size:10px;padding:3px 8px;border:1px solid var(--line);border-radius:3px;color:var(--ink-3);}
+.reference .txt .tags span.hot{color:var(--return);border-color:var(--return);}
+
+/* 四台对比 */
+.stage{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;align-items:start;}
+.col-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3);margin:0 0 4px 2px;text-transform:uppercase;}
+.col-title{font-size:13px;font-weight:600;margin:0 0 12px 2px;}
+.col-title .n{font-family:var(--font-mono);color:var(--accent);margin-right:6px;}
+.phone{width:100%;height:640px;padding:18px 18px 16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;}
+.statusbar{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;color:var(--ink-3);padding:0 2px 16px;}
+.vote-head{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-2);padding-bottom:12px;border-bottom:1px solid var(--line);}
+.vote-head .link{color:var(--accent);font-weight:600;}
+
+/* 图片容器：四档 */
+.photo{position:relative;margin-top:14px;overflow:hidden;border-radius:8px;border:1px solid var(--line);background:var(--bg);flex-shrink:0;}
+.photo img{display:block;width:100%;height:100%;object-fit:cover;}
+.photo .stamp{position:absolute;right:12px;bottom:12px;font-family:var(--font-serif);font-weight:600;font-size:13px;letter-spacing:.04em;padding:5px 10px;border:1px solid currentColor;border-radius:3px;background:rgba(253,251,247,.88);color:var(--return);}
+
+/* 00 裸放：横容器 206px，默认居中裁切 */
+.p0{height:206px;}
+.p0 img{object-position:50% 50%;}
+/* 01 统一裁切：4:5 竖容器，聚焦上身 */
+.p1{height:272px;}
+.p1 img{object-position:50% 30%;}
+/* 02 + 暖调校正 */
+.p2{height:272px;}
+.p2 img{object-position:50% 30%;filter:saturate(.72) sepia(.14) brightness(1.05) contrast(.94);}
+/* 03 + 暖白蒙版（最终） */
+.p3{height:272px;}
+.p3 img{object-position:50% 30%;filter:saturate(.72) sepia(.14) brightness(1.05) contrast(.94);}
+.p3::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(245,241,233,.10),rgba(245,241,233,.20));pointer-events:none;}
+
+.vote-ask{font-family:var(--font-serif);font-weight:500;font-size:16px;line-height:1.45;margin:13px 2px 12px;}
+.tally{padding-top:10px;border-top:1px solid var(--line);}
+.tally-top{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-2);margin-bottom:7px;}
+.tally-top b{font-family:var(--font-mono);font-weight:600;color:var(--ink);}
+.tally-bar{display:flex;gap:3px;height:5px;border-radius:3px;overflow:hidden;}
+.tally-bar .k{width:62%;background:var(--keep);border-radius:3px;}
+.tally-bar .d{flex:1;background:var(--return);border-radius:3px;}
+.chips{display:flex;gap:6px;margin:12px 0 0;}
+.chip{font-size:9px;font-weight:500;padding:4px 8px;color:var(--ink-2);border:1px solid var(--line);border-radius:4px;}
+.chip.on{color:var(--accent);border-color:var(--accent);}
+.vote-prompt{font-size:10px;font-weight:600;color:var(--ink-2);margin:13px 2px 7px;}
+.vote-actions{display:flex;gap:8px;margin-top:auto;}
+.vote-btn{flex:1;appearance:none;cursor:pointer;text-align:left;position:relative;min-height:46px;padding:8px 10px;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:6px;}
+.vote-btn::before{content:"";position:absolute;top:10px;right:10px;width:5px;height:5px;border-radius:50%;background:var(--keep);}
+.vote-btn.d::before{background:var(--return);}
+.vote-btn small{display:block;font-size:8px;font-weight:400;color:var(--ink-3);margin-top:2px;}
+
+/* 结论 */
+.verdict{margin-top:44px;padding:24px 26px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;}
+.verdict h2{font-family:var(--font-serif);font-weight:500;font-size:18px;margin:0 0 14px;}
+.verdict .row{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:10px 0;border-top:1px solid var(--line);font-size:12px;line-height:1.7;}
+.verdict .row:first-of-type{border-top:0;}
+.verdict .row .k{font-weight:600;color:var(--accent);}
+.verdict .row .v{color:var(--ink-2);}
+.verdict .row .v b{color:var(--ink);font-weight:600;}
+
+@media(max-width:1100px){.stage{grid-template-columns:repeat(2,1fr);gap:26px;}}
+@media(max-width:620px){.stage{grid-template-columns:1fr;max-width:360px;margin:0 auto;}.reference{align-items:flex-start;flex-direction:column;}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <p class="eyebrow">Stress Test / 真实内容压力测试</p>
+  <h1>用户实拍 × 简约风格</h1>
+  <p class="lede">用一张典型的试衣镜自拍做压力测试。同一张图、同一套界面，逐级看每一步处理的作用——判断"容器约束 + 轻滤镜"能不能扛住真实内容，还是必须在拍摄/上传环节就干预。</p>
+
+  <div class="reference">
+    <img src="tryon-sample.jpg" alt="用户试穿实拍原图" />
+    <div class="txt">
+      <h2>测试图的问题清单</h2>
+      <p>竖版 1280×2276。人像在镜中、主体是黑色大衣；背景是浴室冷白光、瓷砖、纸箱、置物架杂物。手机屏的图片位是横向 206px，竖图塞进去会被裁掉头和脚。</p>
+      <div class="tags">
+        <span class="hot">冷白光 vs 暖宣纸</span>
+        <span class="hot">竖图 vs 横容器</span>
+        <span class="hot">背景杂物</span>
+        <span>纸箱黄</span>
+        <span>蓝白地砖</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <!-- 00 -->
+    <div>
+      <p class="col-label">Level 00</p>
+      <p class="col-title"><span class="n">00</span>裸放进界面</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="vote-head"><span>← 大家在问</span><span class="link">大家怎么看</span></div>
+        <div class="photo p0"><img src="tryon-sample.jpg" alt="裸放效果"><span class="stamp">建议退掉</span></div>
+        <p class="vote-ask">买大了一码，这件留不留？</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>62%</b></span><span>退掉 <b>38%</b></span></div>
+          <div class="tally-bar"><div class="k"></div><div class="d"></div></div>
+        </div>
+        <div class="chips"><span class="chip on">能搭</span><span class="chip">不太好搭</span></div>
+        <p class="vote-prompt">你会怎么选？</p>
+        <div class="vote-actions">
+          <button class="vote-btn k">留下<small>可以搭</small></button>
+          <button class="vote-btn d">退掉<small>不够合适</small></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 01 -->
+    <div>
+      <p class="col-label">Level 01</p>
+      <p class="col-title"><span class="n">01</span>+ 容器与裁切</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="vote-head"><span>← 大家在问</span><span class="link">大家怎么看</span></div>
+        <div class="photo p1"><img src="tryon-sample.jpg" alt="统一裁切效果"><span class="stamp">建议退掉</span></div>
+        <p class="vote-ask">买大了一码，这件留不留？</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>62%</b></span><span>退掉 <b>38%</b></span></div>
+          <div class="tally-bar"><div class="k"></div><div class="d"></div></div>
+        </div>
+        <div class="chips"><span class="chip on">能搭</span><span class="chip">不太好搭</span></div>
+        <p class="vote-prompt">你会怎么选？</p>
+        <div class="vote-actions">
+          <button class="vote-btn k">留下<small>可以搭</small></button>
+          <button class="vote-btn d">退掉<small>不够合适</small></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 -->
+    <div>
+      <p class="col-label">Level 02</p>
+      <p class="col-title"><span class="n">02</span>+ 暖调校正</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="vote-head"><span>← 大家在问</span><span class="link">大家怎么看</span></div>
+        <div class="photo p2"><img src="tryon-sample.jpg" alt="暖调校正效果"><span class="stamp">建议退掉</span></div>
+        <p class="vote-ask">买大了一码，这件留不留？</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>62%</b></span><span>退掉 <b>38%</b></span></div>
+          <div class="tally-bar"><div class="k"></div><div class="d"></div></div>
+        </div>
+        <div class="chips"><span class="chip on">能搭</span><span class="chip">不太好搭</span></div>
+        <p class="vote-prompt">你会怎么选？</p>
+        <div class="vote-actions">
+          <button class="vote-btn k">留下<small>可以搭</small></button>
+          <button class="vote-btn d">退掉<small>不够合适</small></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 -->
+    <div>
+      <p class="col-label">Level 03 · Final</p>
+      <p class="col-title"><span class="n">03</span>+ 柔化蒙版</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮</span></div>
+        <div class="vote-head"><span>← 大家在问</span><span class="link">大家怎么看</span></div>
+        <div class="photo p3"><img src="tryon-sample.jpg" alt="最终处理效果"><span class="stamp">建议退掉</span></div>
+        <p class="vote-ask">买大了一码，这件留不留？</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>62%</b></span><span>退掉 <b>38%</b></span></div>
+          <div class="tally-bar"><div class="k"></div><div class="d"></div></div>
+        </div>
+        <div class="chips"><span class="chip on">能搭</span><span class="chip">不太好搭</span></div>
+        <p class="vote-prompt">你会怎么选？</p>
+        <div class="vote-actions">
+          <button class="vote-btn k">留下<small>可以搭</small></button>
+          <button class="vote-btn d">退掉<small>不够合适</small></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <h2>怎么读这组对比</h2>
+    <div class="row"><div class="k">00 裸放</div><div class="v">横容器把竖图裁成腰部特写——<b>头脚全丢，人看不清，衣服也看不全</b>。冷白浴室光和纸箱黄直接撞上暖宣纸，这是最糟的情况，也是现在直接上线会发生的样子。</div></div>
+    <div class="row"><div class="k">01 容器约束</div><div class="v">改成 4:5 竖容器 + 聚焦上身，先把人保住。<b>这一步收益最大</b>，靠布局就能解决，不需要动图片本身。</div></div>
+    <div class="row"><div class="k">02 暖调校正</div><div class="v">降饱和 + 轻微 sepia + 提亮，把冷白光往暖调拉，背景杂物退后一档，黑色大衣反而更稳。<b>代价是肤色会偏暖</b>，需要控制强度。</div></div>
+    <div class="row"><div class="k">03 柔化蒙版</div><div class="v">再压一层暖白半透明，和整套宣传纸色调统一。到这里<b>视觉冲突基本可控</b>，但仍清楚地是一张真实照片，不会假。</div></div>
+    <div class="row"><div class="k">结论</div><div class="v">容器约束（01）必须做；暖调校正（02-03）是加分项。<b>但滤镜救不了拍摄环境</b>——若用户都在杂乱浴室拍，统一感只能靠"上传前引导"（白墙、自然光、全身入镜）从源头解决。这是产品流程问题，不是视觉问题。</div></div>
+  </div>
+</div>
+</body>
+</html>

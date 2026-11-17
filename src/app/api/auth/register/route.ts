@@ -1,4 +1,5 @@
-import { registerAccount } from "@/lib/vectoree"
+import { writeSession } from "@/lib/session"
+import { loginAccount, readAccount, readTokens, registerAccount } from "@/lib/vectoree"
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { email?: string; password?: string; name?: string } | null
@@ -17,5 +18,18 @@ export async function POST(request: Request) {
     const message = typeof result.data?.message === "string" ? result.data.message : "注册没有成功。"
     return Response.json({ message }, { status: result.status || 400 })
   }
-  return Response.json({ needVerification: true, email })
+  let account = readAccount(result.data)
+  let tokens = readTokens(result.data)
+  if (!tokens) {
+    // 管理员建号只返回 accessToken，补一次登录拿齐 access + refresh
+    const logged = await loginAccount(email, password)
+    tokens = readTokens(logged.data)
+    account = readAccount(logged.data) || account
+  }
+  if (!account || !tokens) {
+    // 云端开启了邮箱验证：验证码已经发到邮箱，等用户填码
+    return Response.json({ needVerification: true, email })
+  }
+  await writeSession(tokens)
+  return Response.json({ user: account, ...tokens })
 }

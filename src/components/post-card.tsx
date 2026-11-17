@@ -39,6 +39,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
             {deadlineLabel(post)}
           </span>
           <span className="text-muted-foreground">{KIND_LABEL[post.kind]}</span>
+          {(post.images?.length ?? 0) > 1 ? <span className="text-muted-foreground">{post.images?.length} 张照片</span> : null}
           {post.mine ? <span className="text-brass">你发的</span> : null}
           {post.myVote ? (
             <span className="text-foreground/70">你投了{post.myVote === "keep" ? "留" : "退"}</span>
@@ -62,7 +63,7 @@ export function PostCard({ post, featured = false }: { post: Post; featured?: bo
           <VoteBar post={post} />
         </div>
         <p className="mt-3 text-xs tracking-wide text-muted-foreground">
-          {post.opinions.length} 条具体意见
+          {post.opinions.length} 条评论
           <span className="px-1">·</span>
           {post.author}
           {post.city ? ` · ${post.city}` : ""}

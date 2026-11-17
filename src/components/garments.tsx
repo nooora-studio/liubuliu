@@ -15,9 +15,9 @@ function Sheet({
   return (
     <svg viewBox="0 0 320 400" role="img" aria-label={title} className="h-full w-full">
       <rect width="320" height="400" fill={bg} />
-      <path d="M0 22 H320" stroke="#1c1915" strokeOpacity="0.06" />
+      <path d="M0 22 H320" stroke="#2a2622" strokeOpacity="0.06" />
       {children}
-      <ellipse cx="160" cy="372" rx="86" ry="8" fill="#1c1915" opacity="0.08" />
+      <ellipse cx="160" cy="372" rx="86" ry="8" fill="#2a2622" opacity="0.08" />
     </svg>
   )
 }
@@ -116,13 +116,13 @@ function Sneakers({ title }: { title: string }) {
   return (
     <Sheet bg="#f4f1ea" title={title}>
       <g transform="translate(28 150)">
-        <path d="M18 78c22-8 48-28 78-28 34 0 62 16 92 16 20 0 36 8 48 18 8 18-6 28-22 30H34c-16-2-28-14-16-36z" fill="#fbfaf7" stroke="#1c1915" strokeWidth="3" />
+        <path d="M18 78c22-8 48-28 78-28 34 0 62 16 92 16 20 0 36 8 48 18 8 18-6 28-22 30H34c-16-2-28-14-16-36z" fill="#fbfaf7" stroke="#2a2622" strokeWidth="3" />
         <path d="M34 86h184c6 14-2 24-16 26H48c-14-2-22-12-14-26z" fill="#c9834a" />
         <path d="M78 58c8 16 8 28 0 36M112 50c8 18 8 32 0 46M146 54c8 16 8 28 0 38" fill="none" stroke="#ded8ce" strokeWidth="3" />
-        <path d="M168 48h28l8 20h-30z" fill="#f3efe8" stroke="#1c1915" strokeWidth="3" />
+        <path d="M168 48h28l8 20h-30z" fill="#f3efe8" stroke="#2a2622" strokeWidth="3" />
       </g>
       <g transform="translate(78 214)" opacity="0.95">
-        <path d="M18 70c20-6 40-22 66-22 28 0 50 12 74 12 16 0 30 6 40 14 6 14-6 22-18 24H32c-14-2-24-12-14-28z" fill="#f7f4ee" stroke="#1c1915" strokeWidth="3" />
+        <path d="M18 70c20-6 40-22 66-22 28 0 50 12 74 12 16 0 30 6 40 14 6 14-6 22-18 24H32c-14-2-24-12-14-28z" fill="#f7f4ee" stroke="#2a2622" strokeWidth="3" />
         <path d="M30 76h156c4 12-2 18-14 20H42c-12-2-18-8-12-20z" fill="#d9a06a" />
       </g>
     </Sheet>

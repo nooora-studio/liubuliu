@@ -4,7 +4,7 @@ import { vectoreeConfigured } from "@/lib/vectoree"
 
 export async function GET(request: Request) {
   if (!vectoreeConfigured()) {
-    return Response.json({ message: "云后端还没有配置密钥。", user: null, posts: [], seed: emptySeed() }, { status: 503 })
+    return Response.json({ message: "暂时连不上服务器。", user: null, posts: [], seed: emptySeed() }, { status: 503 })
   }
   const { account, refreshed } = await resolveAccount(request)
   const payload = await communityPayload(account)

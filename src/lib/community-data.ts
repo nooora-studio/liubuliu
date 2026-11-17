@@ -1,6 +1,6 @@
 import type { Account } from "@/lib/account"
 import type { Category, Decision, Illustration, Kind, Opinion, Post, Stance, Vote } from "@/lib/types"
-import { deleteRows, insertRow, patchRows, rows, uploadLook } from "@/lib/vectoree"
+import { deleteLook, deleteRows, insertRow, patchRows, rows, uploadLook } from "@/lib/vectoree"
 
 const CATEGORIES = new Set(["上衣", "裤装", "裙装", "外套", "鞋", "包"])
 const ILLUSTRATIONS = new Set(["knit", "trousers", "coat", "skirt", "shirt", "sneakers", "blazer", "dress", "hoodie"])
@@ -19,6 +19,16 @@ function text(value: unknown, max: number) {
   return typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, max) : ""
 }
 
+const LOOK_PREFIX = "https://vectoree.ai/api/storage/buckets/looks/objects/"
+
+// 云端桶匿名读会 401，改成走自家代理取图。
+function lookUrl(value: unknown) {
+  const raw = text(value, 500)
+  if (!raw.startsWith(LOOK_PREFIX)) return ""
+  const key = raw.slice(LOOK_PREFIX.length).split("?")[0]
+  return key ? `/api/looks/${key}` : ""
+}
+
 function postedLabel(iso: string) {
   const delta = Date.now() - Date.parse(iso)
   const day = 86_400_000
@@ -28,7 +38,7 @@ function postedLabel(iso: string) {
   return `${Math.floor(delta / day)} 天前`
 }
 
-function asPost(row: Record<string, unknown>, account: Account | null, voteRows: Record<string, unknown>[], opinionRows: Record<string, unknown>[]): Post | null {
+function asPost(row: Record<string, unknown>, account: Account | null, voteRows: Record<string, unknown>[], opinionRows: Record<string, unknown>[], imageRows: Record<string, unknown>[]): Post | null {
   const id = text(row.id, 80)
   const kind = text(row.kind, 16)
   const category = text(row.category, 8)
@@ -42,8 +52,13 @@ function asPost(row: Record<string, unknown>, account: Account | null, voteRows:
   const decision = text(row.decision, 16)
   const opinions = opinionRows
     .filter((opinion) => text(opinion.post_id, 80) === id)
-    .map((opinion) => toOpinion(opinion, account))
+    .map((opinion) => toOpinion(opinion, account, userId))
     .filter((opinion): opinion is Opinion => Boolean(opinion))
+  const images = imageRows
+    .filter((image) => image.post_id === id)
+    .sort((a, b) => Number(a.position) - Number(b.position))
+    .map((image) => lookUrl(image.image_url)).filter(Boolean).slice(0, 9)
+  if (!images.length && lookUrl(row.image_url)) images.push(lookUrl(row.image_url))
   return {
     id,
     author: text(row.author_name, 12) || "我",
@@ -59,7 +74,8 @@ function asPost(row: Record<string, unknown>, account: Account | null, voteRows:
     channel: text(row.channel, 16),
     daysLeft: typeof row.days_left === "number" ? row.days_left : null,
     illustration: illustration as Illustration,
-    image: text(row.image_url, 500) || undefined,
+    image: images[0],
+    images,
     keepVotes: relatedVotes.filter((vote) => vote.stance === "keep").length,
     returnVotes: relatedVotes.filter((vote) => vote.stance === "return").length,
     opinions,
@@ -69,7 +85,7 @@ function asPost(row: Record<string, unknown>, account: Account | null, voteRows:
   }
 }
 
-function toOpinion(row: Record<string, unknown>, account: Account | null): Opinion | null {
+function toOpinion(row: Record<string, unknown>, account: Account | null, ownerId?: string): Opinion | null {
   const stance = text(row.stance, 16)
   const body = typeof row.body === "string" ? row.body.trim() : ""
   const id = text(row.id, 80)
@@ -81,6 +97,7 @@ function toOpinion(row: Record<string, unknown>, account: Account | null): Opini
     stance: stance as Stance,
     text: body.slice(0, 180),
     mine: account?.id === text(row.user_id, 80),
+    supplement: Boolean(ownerId && ownerId === text(row.user_id, 80)),
   }
 }
 
@@ -90,8 +107,12 @@ export async function communityPayload(account: Account | null) {
     rows("votes", "?limit=1000"),
     rows("opinions", "?limit=1000&order=created_at.asc"),
   ])
+  const ids = postRows.map((row) => encodeURIComponent(text(row.id, 80))).filter(Boolean)
+  const imageRows = ids.length
+    ? await rows("post_images", `?post_id=in.(${ids.join(",")})&limit=720&order=position.asc`)
+    : []
   const posts = postRows
-    .map((row) => asPost(row, account, voteRows, opinionRows))
+    .map((row) => asPost(row, account, voteRows, opinionRows, imageRows))
     .filter((post): post is Post => Boolean(post))
   const seed: SeedOverlay = { votes: {}, extraKeep: {}, extraReturn: {}, opinions: {} }
   const known = new Set(posts.map((post) => post.id))
@@ -115,15 +136,17 @@ export async function communityPayload(account: Account | null) {
   return { user: account, posts, seed }
 }
 
-async function storedImage(value: unknown) {
-  if (typeof value !== "string" || !value) return ""
-  if (value.startsWith("https://vectoree.ai/api/storage/buckets/looks/")) return value.slice(0, 500)
+function imageBytes(value: unknown) {
+  if (typeof value !== "string" || value.length > 950_000) return null
   const match = value.match(/^data:image\/(jpeg|png|webp);base64,([a-z0-9+/=\s]+)$/i)
-  if (!match) return ""
+  if (!match) return null
   const bytes = Buffer.from(match[2].replace(/\s/g, ""), "base64")
-  if (bytes.length < 32 || bytes.length > 700_000) return ""
+  if (bytes.length < 32 || bytes.length > 700_000) return null
   const mime = match[1].toLowerCase() === "png" ? "image/png" : match[1].toLowerCase() === "webp" ? "image/webp" : "image/jpeg"
-  return uploadLook(bytes, mime)
+  const valid = mime === "image/jpeg" ? bytes[0] === 0xff && bytes[1] === 0xd8
+    : mime === "image/png" ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    : bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP"
+  return valid ? { bytes, mime } : null
 }
 
 export async function createPost(account: Account, input: Record<string, unknown>) {
@@ -142,10 +165,42 @@ export async function createPost(account: Account, input: Record<string, unknown
   const daysLeft = days === null ? null : typeof days === "number" && [1, 2, 3, 5, 7].includes(days) ? days : null
   const id = text(input.id, 40)
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
-    return "这条纠结的编号无效。"
+    return "这条纠结的编号无效，请重新发布。"
   }
-  const image = await storedImage(input.image)
-  const created = await insertRow("posts", {
+  const existing = (await rows("posts", `?id=eq.${encodeURIComponent(id)}&select=user_id&limit=1`))[0]
+  if (existing) return existing.user_id === account.id ? "" : "这条纠结的编号已被使用，请重新发布。"
+  if (input.images !== undefined && !Array.isArray(input.images)) return "照片没读到，重新选一次。"
+  const selected = Array.isArray(input.images) ? input.images : input.image ? [input.image] : []
+  if (selected.length > 9) return "一条最多放 9 张照片，先去掉几张。"
+  const prepared = selected.map(imageBytes)
+  if (prepared.some((image) => !image)) return "有照片读不出来，或者太大了。换一张，或者压小一点再发。"
+  const images: string[] = []
+  const imageRowIds: string[] = []
+  async function cleanup() {
+    await Promise.all(imageRowIds.map((rowId) => deleteRows("post_images", `id=eq.${rowId}`).catch(() => undefined)))
+    await Promise.all(images.map((url) => deleteLook(url).catch(() => undefined)))
+  }
+  try {
+    for (const image of prepared) {
+      if (!image) continue
+      const url = await uploadLook(image.bytes, image.mime)
+      if (!url) throw new Error("upload")
+      images.push(url)
+    }
+    // 先写图片列表，全部成功后才发布帖子；失败仅回收本次创建的资源。
+    for (const [position, image_url] of images.entries()) {
+      const rowId = cryptoRandom()
+      imageRowIds.push(rowId)
+      const saved = await insertRow("post_images", { id: rowId, post_id: id, image_url, position })
+      if (!saved.ok) throw new Error("image-row")
+    }
+  } catch {
+    await cleanup()
+    return "照片没传完，这条还没发出去。请重试。"
+  }
+  let created
+  try {
+    created = await insertRow("posts", {
     id,
     user_id: account.id,
     author_name: account.name || "我",
@@ -158,10 +213,20 @@ export async function createPost(account: Account, input: Record<string, unknown
     channel: text(input.channel, 16),
     days_left: daysLeft,
     illustration,
-    image_url: image || null,
+    image_url: images[0] || null,
     decision: null,
-  })
-  return created.ok ? "" : "这条纠结没有写进云端。"
+    })
+  } catch {
+    // 请求可能已经成功到达云端，先核实，避免清掉已发布帖子的照片。
+    const saved = (await rows("posts", `?id=eq.${id}&select=user_id&limit=1`))[0]
+    if (saved?.user_id === account.id) return ""
+    await cleanup()
+    return "这条纠结没有发出去，请重试。"
+  }
+  if (!created.ok) {
+    await cleanup()
+  }
+  return created.ok ? "" : "这条纠结没有发出去，请重试。"
 }
 
 export async function castVote(account: Account, postId: string, stance: string) {
@@ -184,12 +249,14 @@ export async function addCloudOpinion(account: Account, input: Record<string, un
   const body = typeof input.text === "string" ? input.text.trim().slice(0, 180) : ""
   const author = text(input.author, 12) || account.name || "路过的人"
   if (!postId || !STANCES.has(stance) || body.length < 4) return "至少写一句具体的。"
+  const post = (await rows("posts", `?id=eq.${encodeURIComponent(postId)}&select=user_id&limit=1`))[0]
+  const supplement = post && text(post.user_id, 80) === account.id
   const created = await insertRow("opinions", {
     id: cryptoRandom(),
     post_id: postId,
     user_id: account.id,
     author_name: author,
-    stance,
+    stance: supplement ? "style" : stance,
     body,
   })
   return created.ok ? "" : "意见没有写上。"

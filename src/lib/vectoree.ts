@@ -29,7 +29,7 @@ export function vectoreeConfigured() {
 
 async function ve(pathname: string, init: RequestInit & { userToken?: string } = {}): Promise<VeResult> {
   const key = init.userToken || apiKey()
-  if (!key) return { ok: false, status: 503, data: { message: "云后端还没有配置密钥。" } }
+  if (!key) return { ok: false, status: 503, data: { message: "暂时连不上服务器。" } }
   const headers = new Headers(init.headers)
   headers.set("accept", "application/json")
   headers.set("authorization", `Bearer ${key}`)
@@ -72,13 +72,15 @@ export function readTokens(data: Record<string, unknown> | null): AuthTokens | n
   return { accessToken, refreshToken }
 }
 
+// 走管理员接口建号：跳过公开注册的 IP 限流，并直接 autoConfirm（平台发信不可用时必须这样）。
 export async function registerAccount(input: { email: string; password: string; name: string }) {
-  return ve("/api/auth/users?client_type=server", {
+  return ve("/api/auth/admin/users?client_type=server", {
     method: "POST",
     body: JSON.stringify({
       email: input.email,
       password: input.password,
       name: input.name,
+      autoConfirm: true,
     }),
   })
 }
@@ -146,11 +148,31 @@ export async function uploadLook(bytes: Buffer, mime: string) {
   return url
 }
 
+export async function deleteLook(url: string) {
+  const prefix = `${API}/api/storage/buckets/looks/objects/`
+  if (!url.startsWith(prefix)) return
+  const key = url.slice(prefix.length).split("?")[0]
+  if (key) await ve(`/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, { method: "DELETE" })
+}
+
+// 云端存储桶的公开读在平台侧不生效，匿名取图会 401，所以由服务端带着密钥代取。
+export async function readLook(key: string) {
+  const required = apiKey()
+  if (!required) return null
+  const response = await fetch(`${API}/api/storage/buckets/looks/objects/${encodeURIComponent(key)}`, {
+    headers: { authorization: `Bearer ${required}` },
+    cache: "no-store",
+  })
+  if (!response.ok) return null
+  const bytes = Buffer.from(await response.arrayBuffer())
+  return { bytes, contentType: response.headers.get("content-type") || "image/jpeg" }
+}
+
 export async function loginWithWechatCode(code: string) {
   const appid = process.env.WECHAT_APPID || ""
   const secret = process.env.WECHAT_SECRET || ""
   if (!appid || !secret) {
-    return { ok: false as const, status: 501, message: "微信登录还需要这只小程序自己的 AppID 和 AppSecret。" }
+    return { ok: false as const, status: 501, message: "微信登录还没配好，先用邮箱试试。" }
   }
   const exchange = new URL("https://api.weixin.qq.com/sns/jscode2session")
   exchange.searchParams.set("appid", appid)

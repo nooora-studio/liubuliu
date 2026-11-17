@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Look } from "@/components/look"
 import { Button } from "@/components/ui/button"
@@ -13,7 +14,7 @@ import { CATEGORIES, ILLUSTRATIONS, type Category, type Illustration, type Kind,
 import { cn } from "cn"
 
 const KINDS: { id: Kind; label: string; hint: string }[] = [
-  { id: "keep", label: "要不要留", hint: "主要是退不退得下决心" },
+  { id: "keep", label: "要不要留", hint: "就是下不了决心退不退" },
   { id: "style", label: "怎么搭", hint: "衣服留下了，不知道怎么穿" },
   { id: "both", label: "两个都纠结", hint: "留不留、好不好看，一起问" },
 ]
@@ -35,11 +36,12 @@ const IMAGE_ERROR: Record<string, string> = {
 
 export function Composer() {
   const router = useRouter()
-  const { addPost } = useCommunity()
+  const { addPost, user, hydrated, error } = useCommunity()
   const [kind, setKind] = useState<Kind>("keep")
   const [category, setCategory] = useState<Category>("上衣")
   const [illustration, setIllustration] = useState<Illustration>("knit")
-  const [image, setImage] = useState<string | undefined>(undefined)
+  const [images, setImages] = useState<string[]>([])
+  const image = images[0]
   const [imageError, setImageError] = useState<string | null>(null)
   const [readingImage, setReadingImage] = useState(false)
   const [title, setTitle] = useState("")
@@ -49,14 +51,41 @@ export function Composer() {
   const [channel, setChannel] = useState("")
   const [daysLeft, setDaysLeft] = useState<number | null>(3)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [submitting, setSubmitting] = useState(false)
 
-  async function onFile(file: File | undefined) {
+  if (!hydrated) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16">
+        <p className="font-serif text-2xl">正在加载…</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="font-serif text-3xl tracking-tight sm:text-4xl">登录后才能发帖</h1>
+        <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
+          你发的、收到的投票和意见都记在账号里，换设备也能看见。先登录，再把那件衣服放上来。
+        </p>
+        <Link href="/login?redirect=/new" className="mt-6 inline-flex h-11 items-center border border-foreground bg-foreground px-5 text-sm text-background">
+          去登录
+        </Link>
+      </div>
+    )
+  }
+
+  async function onFiles(files: File[]) {
     setImageError(null)
-    if (!file) return
+    if (!files.length || readingImage || submitting) return
+    if (files.length + images.length > 9) {
+      setImageError("一条最多放 9 张照片，先去掉几张。")
+      return
+    }
     setReadingImage(true)
     try {
-      const data = await compressImage(file)
-      setImage(data)
+      const data = await Promise.all(files.map(compressImage))
+      setImages((current) => [...current, ...data])
     } catch (error) {
       const code = error instanceof Error ? error.message : "read"
       setImageError(IMAGE_ERROR[code] ?? IMAGE_ERROR.read)
@@ -67,6 +96,7 @@ export function Composer() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
+    if (readingImage || submitting) return
     const nextErrors: Record<string, string> = {}
     const cleanTitle = title.trim()
     const cleanStory = story.trim()
@@ -83,6 +113,7 @@ export function Composer() {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
+    setSubmitting(true)
     const post: Post = {
       id: crypto.randomUUID(),
       author: "我",
@@ -99,6 +130,7 @@ export function Composer() {
       daysLeft,
       illustration,
       image,
+      images,
       keepVotes: 0,
       returnVotes: 0,
       opinions: [],
@@ -107,6 +139,7 @@ export function Composer() {
       myVote: null,
     }
     const saved = await addPost(post)
+    setSubmitting(false)
     if (saved) router.push(`/post/${post.id}`)
   }
 
@@ -115,7 +148,7 @@ export function Composer() {
       <div className="max-w-2xl">
         <h1 className="font-serif text-3xl tracking-tight sm:text-4xl">把那件衣服放上来</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          写你自己看不出来的那一点。已经有的类似单品、准备配什么、最担心哪里，这些比“好看吗”有用。
+          说说你自己拿不准的地方：是不是跟已有的重了、打算配什么、最担心哪里。这些写清楚，比问“好看吗”管用。
         </p>
       </div>
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
@@ -127,25 +160,27 @@ export function Composer() {
           category={category}
         />
         <div className="mt-4">
-          <p className="text-sm font-medium">照片</p>
+          <p className="text-sm font-medium">照片 {images.length} / 9</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            登录之后，照片会上传到云端，别人才能看见。没有照片就先选一张示意图。
+            可以放实拍、想搭的风格，或者不同搭配。第一张当封面。
           </p>
           <div className="mt-2">
             <label
               htmlFor="photo"
               className="inline-flex h-10 cursor-pointer items-center border border-foreground/20 bg-card px-3 text-sm"
             >
-              {readingImage ? "正在处理照片…" : image ? "换一张照片" : "从相册选一张"}
+              {readingImage ? "正在处理照片…" : "添加照片"}
             </label>
             <input
               id="photo"
               type="file"
+              multiple
+              disabled={readingImage || submitting || images.length >= 9}
               accept="image/jpeg,image/png,image/webp"
               className="sr-only"
               onChange={(event) => {
-                const file = event.target.files?.[0]
-                void onFile(file)
+                const files = Array.from(event.target.files ?? [])
+                void onFiles(files)
                 event.target.value = ""
               }}
             />
@@ -155,13 +190,17 @@ export function Composer() {
               {imageError}
             </p>
           ) : null}
-          {image ? (
-            <Button type="button" variant="outline" className="mt-3 h-9" onClick={() => setImage(undefined)}>
-              去掉照片，改用示意图
-            </Button>
-          ) : null}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {images.map((photo, index) => (
+              <div key={photo + index} className="relative">
+                <Look illustration={illustration} image={photo} alt={`照片 ${index + 1}`} framed={false} />
+                <button type="button" disabled={readingImage || submitting} aria-label={`删除照片 ${index + 1}`} className="absolute right-0 top-0 h-9 w-9 bg-foreground text-background" onClick={() => setImages((current) => current.filter((_, i) => i !== index))}>×</button>
+                <button type="button" disabled={readingImage || submitting} className="w-full border border-foreground/20 py-2 text-xs" onClick={() => setImages((current) => [current[index], ...current.filter((_, i) => i !== index)])}>{index === 0 ? "封面" : "设为封面"}</button>
+              </div>
+            ))}
+          </div>
         </div>
-        <fieldset className="mt-5">
+        <fieldset className="mt-5" hidden={images.length > 0}>
           <legend className="text-sm font-medium">示意图</legend>
           <div className="mt-2 grid grid-cols-3 gap-2">
             {ILLUSTRATIONS.map((id) => (
@@ -207,7 +246,7 @@ export function Composer() {
         </fieldset>
 
         <div className="mt-5">
-          <Label htmlFor="title">一句话</Label>
+          <Label htmlFor="title">一句话说清</Label>
           <Input
             id="title"
             value={title}
@@ -227,13 +266,13 @@ export function Composer() {
         </div>
 
         <div className="mt-5">
-          <Label htmlFor="story">你自己哪里看不顺眼</Label>
+          <Label htmlFor="story">说说你的纠结</Label>
           <Textarea
             id="story"
             value={story}
             maxLength={400}
             aria-invalid={Boolean(errors.story)}
-            placeholder="在店里觉得好，回家对着衣柜就不确定了。写你已经有什么、准备配什么、最担心的一点。"
+            placeholder="想要什么效果？放了几张的话，按顺序说说分别想搭什么。"
             className="mt-2 min-h-36"
             onChange={(event) => setStory(event.target.value)}
           />
@@ -248,7 +287,7 @@ export function Composer() {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="item">单品</Label>
+            <Label htmlFor="item">这件是什么</Label>
             <Input
               id="item"
               value={item}
@@ -326,8 +365,13 @@ export function Composer() {
           </div>
         </fieldset>
 
-        <Button type="submit" className="mt-6 h-11 px-5" disabled={readingImage}>
-          发出去，让人帮看
+        {error ? (
+          <p className="mt-6 text-sm text-return" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" className="mt-6 h-11 px-5" disabled={readingImage || submitting}>
+          {submitting ? "正在发出去…" : readingImage ? "正在处理照片…" : "发出去，让人帮看"}
         </Button>
       </div>
       </div>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>搭一票 · 视觉方案</title>
+<style>
+/* ============================================================
+   唯一视觉方案 —— 宣纸 · 赤陶
+   5 中性色 + 1 暖墨 + 赤陶(品牌/退) + 灰绿(留)
+   暖白打底，赤陶给穿搭决策一点买手店的温度，避免知识平台的冷感
+   ============================================================ */
+:root {
+  --bg:#F5F1E9;
+  --surface:#FDFBF7;
+  --ink:#2A2622;
+  --ink-2:#6E655A;
+  --ink-3:#A0988A;
+  --line:#E4DCD0;
+  --accent:#A85B45;
+  --accent-soft:#F2E3DA;
+  --keep:#5E7565;
+  --return:#A85B45;
+  --shadow:0 1px 2px rgba(42,38,34,.04), 0 10px 28px rgba(42,38,34,.05);
+
+  --font-serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC","STSong",serif;
+  --font-sans:-apple-system,"PingFang SC","Noto Sans CJK SC","Helvetica Neue",Arial,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+
+* { box-sizing:border-box; }
+body {
+  margin:0; padding:52px 24px 76px;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--font-sans); -webkit-font-smoothing:antialiased;
+}
+.shell { max-width:1080px; margin:0 auto; }
+
+/* ============ 页头 ============ */
+.eyebrow {
+  display:flex; align-items:center; gap:14px;
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-3); margin:0 0 18px;
+}
+.eyebrow::before { content:""; width:22px; height:2px; background:var(--accent); }
+.hero h1 {
+  font-family:var(--font-serif); font-weight:500; font-size:clamp(34px,5vw,48px);
+  letter-spacing:.02em; line-height:1.1; margin:0 0 16px;
+}
+.hero h1 .en {
+  font-family:var(--font-sans); font-weight:500; font-size:13px; letter-spacing:.1em;
+  color:var(--accent); margin-left:16px; vertical-align:middle;
+}
+.hero .lede {
+  font-size:14px; line-height:1.85; color:var(--ink-2); max-width:660px; margin:0;
+}
+.hero .lede b { color:var(--ink); font-weight:600; }
+
+/* ============ 三台手机 ============ */
+.stage {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:start;
+  margin-top:40px;
+}
+.phone-label {
+  font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; color:var(--ink-3);
+  margin:0 0 12px 3px; text-transform:uppercase;
+}
+.phone {
+  width:100%; height:664px; padding:20px 20px 18px;
+  background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  box-shadow:var(--shadow); display:flex; flex-direction:column; overflow:hidden;
+}
+.statusbar {
+  display:flex; justify-content:space-between; align-items:center;
+  font-family:var(--font-mono); font-size:11px; color:var(--ink-3);
+  padding:0 2px 20px;
+}
+.bars { display:flex; gap:3px; align-items:flex-end; height:10px; }
+.bars i { width:3px; background:var(--ink-3); border-radius:1px; }
+.bars i:nth-child(1){height:4px} .bars i:nth-child(2){height:6px}
+.bars i:nth-child(3){height:8px} .bars i:nth-child(4){height:10px}
+
+/* ============ 通用 ============ */
+.wordmark { font-family:var(--font-serif); font-weight:500; font-size:25px; letter-spacing:.03em; line-height:1; }
+.wordmark .sub {
+  display:block; font-family:var(--font-sans); font-weight:400; font-size:11px;
+  letter-spacing:.01em; color:var(--ink-3); margin-top:9px;
+}
+.tabs { display:flex; gap:22px; margin:22px 0 6px; border-bottom:1px solid var(--line); }
+.tabs span {
+  font-size:12px; font-weight:500; color:var(--ink-3); padding-bottom:11px;
+  border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap;
+}
+.tabs span.on { color:var(--ink); border-bottom-color:var(--accent); }
+.scroll { flex:1; overflow:auto; scrollbar-width:none; }
+.scroll::-webkit-scrollbar { display:none; }
+
+/* ============ 衣物列表 —— 衣橱陈列感 ============ */
+.items { display:block; }
+.item {
+  display:grid; grid-template-columns:92px 1fr; column-gap:16px;
+  padding:16px 0; min-height:124px; border-bottom:1px solid var(--line); position:relative;
+}
+.item .garment {
+  width:92px; height:92px; border:1px solid var(--line); border-radius:6px;
+  background:var(--bg); display:flex; align-items:center; justify-content:center;
+  padding:9px;
+}
+.item .garment svg { width:100%; height:100%; }
+.item .say {
+  font-size:13px; font-weight:600; line-height:1.45; color:var(--ink);
+  margin:2px 0 8px; align-self:end; padding-right:2px;
+}
+.cd { font-size:10px; color:var(--ink-2); letter-spacing:.01em; }
+.cd.urgent { color:var(--return); font-weight:600; }
+.cd-bar { height:2px; background:var(--line); margin:7px 0 6px; border-radius:2px; overflow:hidden; }
+.cd-bar i { display:block; height:100%; background:var(--accent); border-radius:2px; }
+.meta { font-size:10px; color:var(--ink-3); margin:0; }
+.item.done { opacity:.55; }
+.item.done .garment svg { filter:grayscale(1); }
+.stamp-mini { position:absolute; right:0; top:16px; font-size:10px; font-weight:600; letter-spacing:.02em; }
+.stamp-mini.k { color:var(--keep); }
+.stamp-mini.d { color:var(--return); }
+.item.done .say { padding-right:42px; }
+
+/* ============ 投票页 ============ */
+.vote-head {
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:11px; color:var(--ink-2); padding:0 0 15px; border-bottom:1px solid var(--line);
+}
+.vote-head .link { color:var(--accent); font-weight:600; }
+.vote-img {
+  position:relative; height:206px; margin-top:15px; border-radius:8px;
+  background:var(--bg); border:1px solid var(--line); overflow:hidden;
+}
+.garment { position:relative; display:block; width:100%; height:100%; color:var(--ink-2); }
+.vote-img .garment { padding:18px; }
+.garment svg { width:100%; height:100%; display:block; fill:none; stroke:currentColor; stroke-width:.8; stroke-linejoin:round; stroke-linecap:round; }
+.garment-id,.garment-type { position:absolute; font-size:9px; color:var(--ink-3); }
+.garment-id { right:11px; top:10px; }
+.garment-type { left:11px; bottom:9px; letter-spacing:.02em; }
+.vote-ask {
+  font-family:var(--font-serif); font-weight:500; font-size:18px; line-height:1.45;
+  letter-spacing:.01em; margin:16px 2px 15px;
+}
+.tally { padding-top:13px; border-top:1px solid var(--line); }
+.tally-top {
+  display:flex; justify-content:space-between; font-size:11px; color:var(--ink-2); margin-bottom:9px;
+}
+.tally-top b { font-family:var(--font-mono); font-weight:600; color:var(--ink); }
+.tally-bar { display:flex; gap:3px; height:5px; border-radius:3px; overflow:hidden; }
+.tally-bar .k { background:var(--keep); border-radius:3px; }
+.tally-bar .d { background:var(--return); border-radius:3px; flex:1; }
+.chips { display:flex; gap:7px; margin:15px 0 0; }
+.chip { font-size:10px; font-weight:500; padding:5px 10px; color:var(--ink-2); border:1px solid var(--line); border-radius:4px; }
+.chip.on { color:var(--accent); border-color:var(--accent); }
+.hint { font-size:10px; color:var(--ink-3); line-height:1.6; margin:9px 2px 0; }
+.vote-prompt { font-size:11px; font-weight:600; color:var(--ink-2); margin:16px 2px 9px; }
+.vote-actions { display:flex; gap:9px; }
+.vote-btn {
+  flex:1; appearance:none; cursor:pointer; text-align:left; position:relative;
+  min-height:52px; padding:9px 12px; font-family:var(--font-sans); font-size:14px; font-weight:600;
+  color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:6px;
+  transition:all .16s ease;
+}
+.vote-btn::before {
+  content:""; position:absolute; top:11px; right:11px; width:5px; height:5px; border-radius:50%;
+  background:var(--keep);
+}
+.vote-btn.d::before { background:var(--return); }
+.vote-btn small { display:block; font-size:9px; font-weight:400; color:var(--ink-3); margin-top:3px; }
+.vote-btn:hover,.vote-btn.selected { border-color:var(--accent); }
+.vote-btn.selected { background:var(--accent-soft); }
+.vote-btn:active { transform:translateY(1px); }
+
+/* 盖章 */
+.stamp {
+  position:absolute; right:14px; bottom:16px;
+  font-family:var(--font-serif); font-weight:600; font-size:15px; letter-spacing:.06em;
+  padding:6px 12px; border:1px solid currentColor; border-radius:3px;
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  opacity:0; pointer-events:none;
+}
+.stamp.k { color:var(--keep); }
+.stamp.d { color:var(--return); }
+.stamp.go { animation:settleIn .42s cubic-bezier(.2,.75,.3,1) forwards; }
+@keyframes settleIn {
+  from { opacity:0; transform:translateY(-12px) rotate(-5deg) scale(1.05); }
+  to   { opacity:1; transform:translateY(0) rotate(-3deg) scale(1); }
+}
+@media (prefers-reduced-motion:reduce) { .stamp.go { animation-duration:.01s; } }
+
+/* ============ 结果页 ============ */
+.result-conclusion {
+  font-family:var(--font-serif); font-weight:500; font-size:22px; line-height:1.4;
+  letter-spacing:.01em; margin:18px 2px 6px;
+}
+.result-sub { font-size:11px; color:var(--ink-2); margin:0 2px 15px; }
+.cta {
+  appearance:none; cursor:pointer; width:100%; margin-top:12px; padding:13px 15px;
+  font-family:var(--font-sans); font-size:13px; font-weight:600; text-align:left;
+  color:#fff; background:var(--accent); border:1px solid var(--accent); border-radius:6px;
+  transition:opacity .16s ease;
+}
+.cta:hover { opacity:.9; }
+.cta:active { transform:translateY(1px); }
+.cta.ghost { color:var(--ink-2); background:transparent; border-color:var(--line); }
+.cta.ghost:hover { border-color:var(--ink-3); }
+.footnote { text-align:center; font-size:10px; color:var(--ink-3); margin:14px 0 0; }
+
+/* ============ 色卡 ============ */
+.swatches { margin-top:48px; padding-top:26px; border-top:1px solid var(--line); }
+.swatches-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; flex-wrap:wrap; gap:8px; }
+.swatches h2 { font-family:var(--font-serif); font-weight:500; font-size:17px; margin:0; }
+.swatches-head p { font-size:11px; color:var(--ink-3); margin:0; }
+.swatch-row { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
+.sw { border:1px solid var(--line); border-radius:7px; overflow:hidden; background:var(--surface); }
+.sw .chipc { height:64px; border-bottom:1px solid var(--line); }
+.sw .info { padding:9px 10px 10px; }
+.sw .nm { font-size:11px; font-weight:600; margin-bottom:4px; }
+.sw .hx { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
+
+@media (max-width:880px) {
+  .stage { grid-template-columns:1fr; gap:30px; max-width:380px; margin:32px auto 0; }
+  .swatch-row { grid-template-columns:repeat(4,1fr); }
+}
+@media (max-width:520px) { .swatch-row { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+  <symbol id="sketch-knit" viewBox="0 0 100 100">
+    <path d="M38 17 27 22 12 38 21 48 31 40 31 84 69 84 69 40 79 48 88 38 73 22 62 17 58 25 50 29 42 25Z" />
+    <path d="M42 25 50 35 58 25M50 35V84M31 40 25 31M69 40 75 31M34 77h13M53 77h13M21 48l-3 4M79 48l3 4" />
+    <path d="M48 37v2m0 5v2m0 5v2m0 5v2" stroke-width="2" />
+  </symbol>
+  <symbol id="sketch-dress" viewBox="0 0 100 100">
+    <path d="m39 14-12 6-9 22 9 5 9-15 4 17-13 35h46L60 49l4-17 9 15 9-5-9-22-12-6-3 9H42Z" />
+    <path d="M42 23q8 11 16 0M40 49h20M38 55l-5 24M62 55l5 24M27 47l-3 5m49-5 3 5" />
+  </symbol>
+  <symbol id="sketch-shoe" viewBox="0 0 100 100">
+    <path d="M17 61 29 42l14 4 13 17 20 3q9 2 9 10v5H15v-8Z" />
+    <path d="M29 42 35 58 56 63m-41 9h69M38 51l9-1m-7 5 10-1M27 81v3m51-3v3" />
+  </symbol>
+  <symbol id="sketch-jacket" viewBox="0 0 100 100">
+    <path d="m40 15-13 6-13 17 8 11 9-8v44h38V41l9 8 8-11-13-17-13-6-10 13Z" />
+    <path d="m40 15 10 18 10-18M50 33v52M33 49h13v10H33Zm21 0h13v10H54ZM31 40 25 31m44 9 6-9M32 78h36" />
+  </symbol>
+</svg>
+
+<div class="shell">
+  <header class="hero">
+    <p class="eyebrow">留不留 · 穿搭决策</p>
+    <h1>搭一票<span class="en">KEEP OR RETURN</span></h1>
+    <p class="lede">买了衣服，对着镜子看三天也拿不定主意。把那件发上来，让大家投一个<b>「留」或「退」</b>，再补一句具体的搭配意见——要不要留，最后还是你说了算。</p>
+  </header>
+
+  <div class="stage">
+    <!-- 屏幕 1 -->
+    <div>
+      <p class="phone-label">01 / 我的衣橱</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
+        <div class="wordmark">搭一票<span class="sub">新衣服搭不搭，大家帮你看</span></div>
+        <div class="tabs"><span class="on">全部 4</span><span>待决定 2</span></div>
+        <div class="scroll">
+          <div class="items">
+            <div class="item">
+              <div class="garment" role="img" aria-label="针织开衫线稿"><svg viewBox="0 0 100 100"><use href="#sketch-knit"></use></svg></div>
+              <p class="say">买大了一码，袖子太长</p>
+              <span class="cd">退货截止还有 3 天</span>
+              <div class="cd-bar"><i style="width:70%"></i></div>
+              <p class="meta">12 人给了意见</p>
+            </div>
+            <div class="item">
+              <div class="garment" role="img" aria-label="连衣裙线稿"><svg viewBox="0 0 100 100"><use href="#sketch-dress"></use></svg></div>
+              <p class="say">颜色比图片深好多</p>
+              <span class="cd urgent">明天截止退货</span>
+              <div class="cd-bar"><i style="width:22%"></i></div>
+              <p class="meta">5 人给了意见</p>
+            </div>
+            <div class="item done">
+              <span class="stamp-mini k">已留下</span>
+              <div class="garment" role="img" aria-label="小白鞋线稿"><svg viewBox="0 0 100 100"><use href="#sketch-shoe"></use></svg></div>
+              <p class="say">跟我的裤子搭吗</p>
+              <span class="cd">已决定</span>
+              <div class="cd-bar"><i style="width:100%"></i></div>
+              <p class="meta">18 人给了意见</p>
+            </div>
+            <div class="item done">
+              <span class="stamp-mini d">已退掉</span>
+              <div class="garment" role="img" aria-label="工装外套线稿"><svg viewBox="0 0 100 100"><use href="#sketch-jacket"></use></svg></div>
+              <p class="say">犹豫要不要退</p>
+              <span class="cd">已决定</span>
+              <div class="cd-bar"><i style="width:100%"></i></div>
+              <p class="meta">9 人给了意见</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 屏幕 2 -->
+    <div>
+      <p class="phone-label">02 / 帮 TA 看看</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
+        <div class="vote-head"><span>← 大家在问</span><span class="link">大家怎么看</span></div>
+        <div class="vote-img">
+          <div class="garment" role="img" aria-label="针织开衫线稿">
+            <span class="garment-id">版型参考</span>
+            <svg viewBox="0 0 100 100"><use href="#sketch-knit"></use></svg>
+            <span class="garment-type">宽松针织 · L 码</span>
+          </div>
+          <div class="stamp" id="stamp" aria-live="polite"></div>
+        </div>
+        <p class="vote-ask">买大了一码，这件留不留？</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>62%</b></span><span>退掉 <b>38%</b></span></div>
+          <div class="tally-bar"><div class="k" style="width:62%"></div><div class="d"></div></div>
+        </div>
+        <div class="chips"><span class="chip on">能搭</span><span class="chip">不太好搭</span></div>
+        <p class="hint">觉得搭得起来吗？也可以补一句理由。</p>
+        <p class="vote-prompt">你会怎么选？</p>
+        <div class="vote-actions">
+          <button class="vote-btn k" data-v="留">留下<small>可以搭</small></button>
+          <button class="vote-btn d" data-v="退">退掉<small>不够合适</small></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 屏幕 3 -->
+    <div>
+      <p class="phone-label">03 / 收到建议</p>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="bars"><i></i><i></i><i></i><i></i></span></div>
+        <div class="vote-head"><span>← 这件有结果了</span><span class="link">参考结果</span></div>
+        <div class="vote-img">
+          <div class="garment" role="img" aria-label="工装外套线稿">
+            <span class="garment-id">版型参考</span>
+            <svg viewBox="0 0 100 100"><use href="#sketch-jacket"></use></svg>
+            <span class="garment-type">工装外套 · M 码</span>
+          </div>
+          <div class="stamp d go">建议退掉</div>
+        </div>
+        <p class="result-conclusion">大家更建议退掉</p>
+        <p class="result-sub">6 个人看过，4 个人觉得不太适合</p>
+        <div class="tally">
+          <div class="tally-top"><span>留下 <b>33%</b></span><span>退掉 <b>67%</b></span></div>
+          <div class="tally-bar"><div class="k" style="width:33%"></div><div class="d"></div></div>
+        </div>
+        <button class="cta">我决定退掉</button>
+        <button class="cta ghost">记下来，以后看看穿没穿</button>
+        <p class="footnote">投票给建议，最后还是你说了算</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 色卡：从真实令牌读取 -->
+  <div class="swatches">
+    <div class="swatches-head">
+      <h2>当前配色令牌</h2>
+      <p>宣纸 · 赤陶 · 5 中性色 + 暖墨 + 赤陶/灰绿语义色 · 色值读取自真实令牌</p>
+    </div>
+    <div class="swatch-row" id="swatchRow"></div>
+  </div>
+</div>
+
+<script>
+const root = document.documentElement;
+
+/* ---- 色卡：从真实令牌读取，避免图文不符 ---- */
+const TOKENS = [
+  ['底色','--bg'], ['卡面','--surface'], ['暖墨','--ink'], ['灰字','--ink-2'],
+  ['分隔线','--line'], ['留','--keep'], ['赤陶','--accent']
+];
+function renderSwatch(){
+  const cs = getComputedStyle(root);
+  document.getElementById('swatchRow').innerHTML = TOKENS.map(([n,v]) => {
+    const hex = cs.getPropertyValue(v).trim().toUpperCase();
+    return `<div class="sw"><div class="chipc" style="background:${hex}"></div><div class="info"><div class="nm">${n}</div><div class="hx">${hex}</div></div></div>`;
+  }).join('');
+}
+
+/* ---- 投票盖章 ---- */
+const stamp = document.getElementById('stamp');
+document.querySelectorAll('.vote-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const keep = btn.dataset.v === '留';
+    stamp.textContent = keep ? '已选留下' : '已选退掉';
+    stamp.className = 'stamp ' + (keep ? 'k' : 'd');
+    void stamp.offsetWidth;
+    stamp.classList.add('go');
+  });
+});
+
+renderSwatch();
+</script>
+</body>
+</html>

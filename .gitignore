@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vectoree/
+
+# local / private
+.trae-html-share-packages/
+project.private.config.json

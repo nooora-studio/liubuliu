@@ -1,12 +1,20 @@
 <view class="page" wx:if="{{missing}}">
-  <view class="h1">这条纠结不在这台手机里</view>
-  <view class="muted gap">示例帖子一直都在。你自己发的如果清掉了，就找不回来。</view>
+  <view class="h1">没找到这条纠结</view>
+  <view class="muted gap">示例一直都在。你自己发的如果清掉了，就找不回来了。</view>
   <view class="btn gap" bindtap="back">回到社区</view>
 </view>
 
 <view class="page" wx:elif="{{post}}">
   <view class="muted back" bindtap="back">返回社区</view>
-  <view class="hero">
+  <view wx:if="{{post.images.length}}" class="gallery">
+    <swiper class="photo-swiper" current="{{photoIndex}}" bindchange="onPhotoChange">
+      <swiper-item wx:for="{{post.images}}" wx:key="*this">
+        <image class="detail-photo" src="{{item}}" mode="aspectFit" data-url="{{item}}" bindtap="previewPhoto" />
+      </swiper-item>
+    </swiper>
+    <view class="muted tiny photo-count">{{photoIndex + 1}} / {{post.images.length}} · 点图片查看大图</view>
+  </view>
+  <view wx:else class="hero">
     <look illustration="{{post.illustration}}" image="{{post.image}}" category="{{post.category}}" />
   </view>
   <view class="item-line">{{post.item || post.category}} · {{post.priceText}}{{post.channel ? ' · ' + post.channel : ''}}</view>
@@ -29,19 +37,19 @@
       <view class="bar-keep" style="width: {{post.keepShare}}%;"></view>
       <view class="bar-return" style="width: {{post.returnShare}}%;"></view>
     </view>
-    <view wx:if="{{post.decision}}" class="muted gap">作者已经拍板，投票停了。</view>
-    <view wx:elif="{{post.mine}}" class="muted gap">这是你发的。你不能给自己投票，听完再决定留还是退。</view>
+    <view wx:if="{{post.decision}}" class="muted gap">已经决定了，投票停了。</view>
+    <view wx:elif="{{post.mine}}" class="muted gap">这是你发的，不用给自己投票。听完别人的，再决定留还是退。</view>
     <view wx:else class="actions">
-      <view class="btn {{post.myVote == 'keep' ? '' : 'btn-line'}}" data-stance="keep" bindtap="vote">留下</view>
+      <view class="btn {{post.myVote == 'keep' ? 'btn-keep' : 'btn-line'}}" data-stance="keep" bindtap="vote">留下</view>
       <view class="btn {{post.myVote == 'return' ? 'btn-return' : 'btn-line'}}" data-stance="return" bindtap="vote">退掉</view>
     </view>
-    <view wx:if="{{post.mine && !post.decision}}" class="btn gap" bindtap="decide">我决定了</view>
+    <view wx:if="{{post.mine}}" class="btn btn-primary gap" bindtap="decide">{{post.decision ? '修改结论' : '我决定了'}}</view>
     <view wx:if="{{post.decision == 'kept'}}" class="stamp keep">已经留下</view>
     <view wx:if="{{post.decision == 'returned'}}" class="stamp return">已经退掉</view>
   </view>
 
-  <view class="section">具体意见</view>
-  <view wx:if="{{post.opinions.length == 0}}" class="muted">还没有人写。好看不够，说一下哪里值得留、哪里该退。</view>
+  <view class="section">评论与补充 <text class="muted tiny">{{post.opinions.length}}</text></view>
+  <view wx:if="{{post.opinions.length == 0}}" class="muted empty-note">{{post.mine ? '还没有人来看。你可以先写一句你最担心的。' : '还没人说话。你先看的话，留一句你实际看到的。'}}</view>
   <view class="card opinion" wx:for="{{post.opinions}}" wx:key="id">
     <view class="row between">
       <text class="tag tag-{{item.stance}}">{{item.stanceLabel}}</text>
@@ -51,10 +59,10 @@
     <view class="muted tiny">{{item.who}}{{item.mine ? ' · 你写的' : ''}}</view>
   </view>
 
-  <view class="section">你来写一句</view>
-  <view class="muted tiny">点一句开头，再改成你自己的话。写完才会发出去。</view>
-  <view class="starter" wx:for="{{starters}}" wx:key="text" data-index="{{index}}" bindtap="useStarter">{{item.text}}</view>
-  <view class="row stances">
+  <view wx:if="{{loggedIn}}" class="comment-form">
+  <view class="form-title">{{post.mine ? '补充想法' : '写评论'}}</view>
+  <view wx:if="{{!post.mine}}" class="muted tiny">可以聊版型、颜色或搭配，写你实际看到的。</view>
+  <view wx:if="{{!post.mine}}" class="row stances">
     <view
       wx:for="{{stances}}"
       wx:key="id"
@@ -63,8 +71,15 @@
       bindtap="setStance"
     >{{item.label}}</view>
   </view>
+  <textarea class="field area" placeholder="{{post.mine ? '补充你的想法…' : '写下你的看法…'}}" value="{{text}}" maxlength="180" bindinput="onText" show-confirm-bar="{{false}}" />
+  <view class="muted tiny count">{{text.length}} / 180</view>
+  <view class="field-label">署名</view>
   <input class="field" placeholder="怎么称呼你" value="{{author}}" maxlength="12" bindinput="onAuthor" />
-  <textarea class="field area" placeholder="写具体一点：版型、颜色、会不会和已有的重复、怎么搭。" value="{{text}}" maxlength="180" bindinput="onText" />
   <view wx:if="{{error}}" class="return tiny">{{error}}</view>
-  <view class="btn gap" bindtap="send">写下这条意见</view>
+  <button class="btn btn-primary gap" bindtap="send" disabled="{{sending}}" loading="{{sending}}">{{post.mine ? '发布补充' : '发布评论'}}</button>
+  </view>
+  <view wx:else class="comment-form">
+    <view class="muted">登录后才能评论</view>
+    <view class="btn btn-primary gap" bindtap="login">去登录</view>
+  </view>
 </view>

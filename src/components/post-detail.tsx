@@ -25,27 +25,18 @@ import {
   STANCE_LABEL,
   verdict,
 } from "@/lib/format"
-import type { Decision, Stance, Vote } from "@/lib/types"
+import type { Decision, Opinion, Post, Stance, Vote } from "@/lib/types"
 import { cn } from "cn"
 
-const STARTERS: { stance: Stance; text: string }[] = [
-  { stance: "keep", text: "颜色比版型更值得留。白天拉到窗边再看一次，别只在暖光下判决。" },
-  { stance: "return", text: "和你已经有的太像，留着大概率不会拿出来穿。" },
-  { stance: "style", text: "别塞进裤子，下摆盖住胯最宽的位置会好看很多。" },
-  { stance: "style", text: "配深色直筒裤和一双乐福，别配运动鞋。" },
-  { stance: "keep", text: "肩线是对的。这件的价值在版型，不在花色。" },
-  { stance: "return", text: "这个价位如果还要犹豫，通常就是不会常穿。" },
-]
-
 export function PostDetail({ id }: { id: string }) {
-  const { posts, hydrated, displayName, vote, addOpinion, removeOpinion, decide } = useCommunity()
+  const { posts, hydrated, user, displayName, vote, addOpinion, removeOpinion, decide } = useCommunity()
   const post = posts.find((item) => item.id === id)
 
   if (!post && !hydrated) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="font-serif text-2xl">正在从云端找这条纠结</p>
-        <p className="mt-2 text-sm text-muted-foreground">你自己发的帖子跟账号走，打开需要一瞬间。</p>
+        <p className="font-serif text-2xl">正在打开这条纠结</p>
+        <p className="mt-2 text-sm text-muted-foreground">稍等一下，马上就好。</p>
       </div>
     )
   }
@@ -53,9 +44,9 @@ export function PostDetail({ id }: { id: string }) {
   if (!post) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16">
-        <p className="font-serif text-3xl">这条纠结不在社区里</p>
+        <p className="font-serif text-3xl">没找到这条纠结</p>
         <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          示例帖子一直都在。你自己发的如果还没登录就写过，不会出现在云端。
+          示例一直都在。如果你还没登录，自己发的可能没存下来。
         </p>
         <Link href="/" className="mt-6 inline-block text-sm underline underline-offset-4">
           回到社区
@@ -70,12 +61,7 @@ export function PostDetail({ id }: { id: string }) {
   return (
     <article className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
       <div className="lg:sticky lg:top-4">
-        <Look
-          illustration={post.illustration}
-          image={post.image}
-          alt={post.title}
-          category={post.category}
-        />
+        <PostGallery key={post.id} post={post} />
         <p className="mt-3 text-sm leading-6">
           {post.item || post.category}
           <span className="text-muted-foreground"> · {priceLabel(post.price)}</span>
@@ -133,7 +119,14 @@ export function PostDetail({ id }: { id: string }) {
               onDecide={(decision) => decide(post.id, decision)}
             />
           ) : post.decision ? (
-            <p className="mt-4 text-sm text-muted-foreground">已经拍板了，票停在当时的样子。</p>
+            <p className="mt-4 text-sm text-muted-foreground">已经决定了，票就停在那一刻。</p>
+          ) : !user ? (
+            <div className="mt-4 border border-dashed border-foreground/20 bg-card px-4 py-6 text-center">
+              <p className="text-sm text-muted-foreground">登录后才能投票、写意见，你的判断会记在账号里。</p>
+              <Link href={`/login?redirect=/post/${post.id}`} className="mt-4 inline-flex h-10 items-center border border-foreground bg-foreground px-4 text-sm text-background">
+                去登录
+              </Link>
+            </div>
           ) : (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               <VoteButton
@@ -151,22 +144,56 @@ export function PostDetail({ id }: { id: string }) {
           {!post.mine && !post.decision ? (
             <p className="mt-3 text-xs leading-5 text-muted-foreground">
               {post.myVote
-                ? "你改主意了可以再点另一边。票和意见是两件事，下面补一句具体的。"
-                : "先选一边。只说好看帮不上忙，选完可以补一句为什么。"}
+                ? "改主意了，点另一边就行。再补一句你为什么这么看。"
+                : "先选一边。选完再补一句：你为什么这么看。"}
             </p>
           ) : null}
         </section>
 
         <OpinionSection
+          key={post.id}
           postId={post.id}
           opinions={post.opinions}
           displayName={displayName}
           owner={post.mine}
+          loggedIn={Boolean(user)}
           onSubmit={(input) => addOpinion(post.id, input)}
           onRemove={(opinionId) => removeOpinion(post.id, opinionId)}
         />
       </div>
     </article>
+  )
+}
+
+function PostGallery({ post }: { post: Post }) {
+  const images = post.images?.length ? post.images : post.image ? [post.image] : []
+  const [index, setIndex] = useState(0)
+  const [open, setOpen] = useState(false)
+  if (!images.length) return <Look illustration={post.illustration} alt={post.title} category={post.category} />
+  const current = images[index] || images[0]
+  return (
+    <div>
+      <button type="button" className="block w-full" aria-label="查看大图" onClick={() => setOpen(true)}>
+        <Look illustration={post.illustration} image={current} alt={`${post.title} · 照片 ${index + 1}`} category={post.category} />
+      </button>
+      <p className="mt-2 text-center text-xs text-muted-foreground">{index + 1} / {images.length} · 点图片查看大图</p>
+      {images.length > 1 ? <div className="mt-3 grid grid-cols-5 gap-2">{images.map((image, i) => (
+        <button key={image} type="button" aria-label={`查看照片 ${i + 1}`} aria-pressed={i === index} onClick={() => setIndex(i)} className={cn("border-2", i === index ? "border-foreground" : "border-transparent")}>
+          <Look illustration={post.illustration} image={image} alt={`照片 ${i + 1}`} framed={false} />
+        </button>
+      ))}</div> : null}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader><DialogTitle>照片 {index + 1} / {images.length}</DialogTitle><DialogDescription>{post.title}</DialogDescription></DialogHeader>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={current} alt={post.title} className="max-h-[65vh] w-full object-contain" />
+          {images.length > 1 ? <div className="flex justify-between">
+            <Button type="button" variant="outline" disabled={index === 0} onClick={() => setIndex(index - 1)}>上一张</Button>
+            <Button type="button" variant="outline" disabled={index === images.length - 1} onClick={() => setIndex(index + 1)}>下一张</Button>
+          </div> : null}
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }
 
@@ -236,7 +263,7 @@ function DecideBlock({
   const [open, setOpen] = useState(false)
   return (
     <div className="mt-4">
-      <p className="text-sm text-muted-foreground">这是你的帖子，你不给自己投票。听完意见，自己拍板。</p>
+      <p className="text-sm text-muted-foreground">这是你发的，不用给自己投票。听完别人的，自己拿主意。</p>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger className="mt-3 inline-flex h-10 items-center border border-foreground bg-foreground px-4 text-sm text-background">
           {decision ? "改一下结论" : "我决定了"}
@@ -244,7 +271,7 @@ function DecideBlock({
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-serif text-xl">你自己的结论</DialogTitle>
-            <DialogDescription>大家的票只是帮你下嘴。拍板的人是你。</DialogDescription>
+            <DialogDescription>票只是参考，拍板的人是你。</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
             <Button
@@ -279,13 +306,15 @@ function OpinionSection({
   opinions,
   displayName,
   owner,
+  loggedIn,
   onSubmit,
   onRemove,
 }: {
   postId: string
-  opinions: { id: string; author: string; city: string; stance: Stance; text: string; mine?: boolean }[]
+  opinions: Opinion[]
   displayName: string
   owner: boolean
+  loggedIn: boolean
   onSubmit: (input: { author: string; stance: Stance; text: string }) => Promise<boolean>
   onRemove: (opinionId: string) => void
 }) {
@@ -293,31 +322,40 @@ function OpinionSection({
   const [text, setText] = useState("")
   const [authorDraft, setAuthorDraft] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
   const author = authorDraft ?? displayName
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
+    if (sending) return
     if (text.trim().length < 4) {
-      setError("至少写一句具体的。四个字看不出你在说哪一件。")
+      setError("再多写几个字，别人才知道你在说哪一件。")
       return
     }
-    const saved = await onSubmit({ author, stance, text })
+    setSending(true)
+    let saved = false
+    try {
+      saved = await onSubmit({ author, stance: owner ? "style" : stance, text })
+    } catch {
+      setError("网络没连上，再试一次。")
+    } finally {
+      setSending(false)
+    }
     if (saved) {
       setText("")
       setError(null)
-    }
+    } else setError("没有发出去，内容还在，请重试。")
   }
 
   return (
     <section className="mt-8">
-      <h2 className="font-serif text-2xl">具体意见</h2>
-      <p className="mt-1 text-sm text-muted-foreground">版型、颜色、和已有衣服重不重、怎么搭。比“好看”有用。</p>
+      <h2 className="font-serif text-2xl">评论与补充 <span className="text-sm text-muted-foreground">{opinions.length}</span></h2>
 
       {opinions.length === 0 ? (
         <p className="mt-4 border border-dashed border-foreground/20 px-4 py-8 text-sm leading-6 text-muted-foreground">
           {owner
-            ? "还没有人来看。发出去之后，别人的意见会出现在这里。你也可以先补一句自己最担心的点。"
-            : "还没有人说话。你要是先看了，就留一句具体的。"}
+            ? "还没有人来看。发出去之后，意见会出现在这里。也可以先写一句你最担心的。"
+            : "还没人说话。你先看的话，留一句你实际看到的。"}
         </p>
       ) : (
         <ol className="mt-4 space-y-3">
@@ -332,7 +370,7 @@ function OpinionSection({
                     opinion.stance === "style" && "border-brass/50 text-brass"
                   )}
                 >
-                  {STANCE_LABEL[opinion.stance]}
+                  {opinion.supplement ? "作者补充" : STANCE_LABEL[opinion.stance]}
                 </span>
                 <span>
                   {opinion.author}
@@ -355,76 +393,71 @@ function OpinionSection({
         </ol>
       )}
 
-      <form onSubmit={submit} noValidate className="mt-5 border border-dashed border-foreground/20 p-4">
-        <fieldset>
-          <legend className="text-sm font-medium">你站哪边</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(["keep", "return", "style"] as Stance[]).map((item) => (
-              <button
-                key={item}
-                type="button"
-                aria-pressed={stance === item}
-                onClick={() => setStance(item)}
-                className={cn(
-                  "border px-3 py-2 text-sm",
-                  stance === item ? "border-foreground bg-foreground text-background" : "border-foreground/15 bg-card"
-                )}
-              >
-                {STANCE_LABEL[item]}
-              </button>
-            ))}
+      {loggedIn ? (
+        <form onSubmit={submit} noValidate className="mt-6 border-t border-foreground/20 pt-5">
+          <h3 className="font-serif text-xl">{owner ? "补充想法" : "写评论"}</h3>
+          {!owner ? <p className="mt-1 text-sm text-muted-foreground">可以聊版型、颜色或搭配，写你实际看到的。</p> : null}
+          {!owner ? <fieldset className="mt-3">
+            <legend className="sr-only">意见分类</legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(["keep", "return", "style"] as Stance[]).map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  aria-pressed={stance === item}
+                  onClick={() => setStance(item)}
+                  className={cn(
+                    "border px-3 py-2 text-sm",
+                    stance === item ? "border-foreground bg-foreground text-background" : "border-foreground/15 bg-card"
+                  )}
+                >
+                  {STANCE_LABEL[item]}
+                </button>
+              ))}
+            </div>
+          </fieldset> : null}
+          <div className="mt-3">
+            <Label className="sr-only" htmlFor={`note-${postId}`}>{owner ? "补充内容" : "评论内容"}</Label>
+            <Textarea
+              id={`note-${postId}`}
+              value={text}
+              maxLength={180}
+              aria-invalid={Boolean(error)}
+              placeholder={owner ? "补充你的想法…" : "写下你的看法…"}
+              className="mt-2 min-h-24"
+              onChange={(event) => setText(event.target.value)}
+            />
+            {error ? (
+              <p className="mt-1 text-sm text-return" role="alert">
+                {error}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">{text.trim().length}/180</p>
+            )}
           </div>
-        </fieldset>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {STARTERS.map((starter) => (
-            <button
-              key={starter.text}
-              type="button"
-              className="border border-foreground/10 bg-card px-2 py-1 text-left text-xs leading-5 text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-              onClick={() => {
-                setStance(starter.stance)
-                setText(starter.text)
-                setError(null)
-              }}
-            >
-              {starter.text}
-            </button>
-          ))}
+          <div className="mt-3">
+            <Label htmlFor={`name-${postId}`}>署名</Label>
+            <Input
+              id={`name-${postId}`}
+              value={author}
+              maxLength={12}
+              placeholder="路过的人"
+              className="mt-2 h-10 max-w-xs"
+              onChange={(event) => setAuthorDraft(event.target.value)}
+            />
+          </div>
+          <Button type="submit" disabled={sending} className="mt-4 h-11 px-4">
+            {sending ? "正在发布…" : owner ? "发布补充" : "发布评论"}
+          </Button>
+        </form>
+      ) : (
+        <div className="mt-5 border border-dashed border-foreground/20 bg-card px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">登录后才能留言，你的话会记在账号里。</p>
+          <Link href={`/login?redirect=/post/${postId}`} className="mt-4 inline-flex h-10 items-center border border-foreground bg-foreground px-4 text-sm text-background">
+            去登录
+          </Link>
         </div>
-        <div className="mt-3">
-          <Label htmlFor={`note-${postId}`}>你的一句</Label>
-          <Textarea
-            id={`note-${postId}`}
-            value={text}
-            maxLength={180}
-            aria-invalid={Boolean(error)}
-            placeholder="说版型、颜色，或者直接告诉对方怎么搭。"
-            className="mt-2 min-h-24"
-            onChange={(event) => setText(event.target.value)}
-          />
-          {error ? (
-            <p className="mt-1 text-sm text-return" role="alert">
-              {error}
-            </p>
-          ) : (
-            <p className="mt-1 text-xs text-muted-foreground">{text.trim().length}/180</p>
-          )}
-        </div>
-        <div className="mt-3">
-          <Label htmlFor={`name-${postId}`}>怎么称呼你</Label>
-          <Input
-            id={`name-${postId}`}
-            value={author}
-            maxLength={12}
-            placeholder="路过的人"
-            className="mt-2 h-10 max-w-xs"
-            onChange={(event) => setAuthorDraft(event.target.value)}
-          />
-        </div>
-        <Button type="submit" className="mt-4 h-10 px-4">
-          写下这句
-        </Button>
-      </form>
+      )}
     </section>
   )
 }

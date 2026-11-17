@@ -4,7 +4,7 @@ import { loginWithWechatCode } from "@/lib/vectoree"
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { code?: string } | null
   const code = body?.code?.trim() || ""
-  if (!code) return Response.json({ message: "没有拿到微信登录码。" }, { status: 400 })
+  if (!code) return Response.json({ message: "微信没有给回登录信息，再试一次。" }, { status: 400 })
   const result = await loginWithWechatCode(code)
   if (!result.ok) return Response.json({ message: result.message }, { status: result.status })
   await writeSession(result.tokens)

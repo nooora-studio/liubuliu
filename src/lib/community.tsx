@@ -60,7 +60,7 @@ export async function reloadCommunity() {
   const response = await fetch("/api/community", { cache: "no-store" })
   const data = await readJson(response)
   if (!response.ok || !data) {
-    emit({ ...remote, hydrated: true, needsLogin: false, error: data?.message || "云端暂时没连上，示例纠结还在。" })
+    emit({ ...remote, hydrated: true, needsLogin: false, error: data?.message || "暂时连不上，示例还在。" })
     return
   }
   emit({
@@ -142,6 +142,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
             channel: post.channel,
             daysLeft: post.daysLeft,
             image: post.image,
+            images: post.images,
           }),
         }),
       decide: (id: string, decision: Decision) =>

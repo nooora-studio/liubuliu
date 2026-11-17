@@ -30,11 +30,11 @@ export function Look({
   if (!framed) return frame
 
   return (
-    <figure className="bg-card p-2 pb-3 shadow-[0_1px_0_rgba(28,25,21,0.04)]">
+    <figure className="bg-card p-2 pb-3 shadow-[0_1px_0_rgba(42,38,34,0.05)]">
       {frame}
       <figcaption className="mt-2 flex items-center justify-between px-1 text-[11px] tracking-[0.18em] text-muted-foreground">
         <span>{category ?? "衣服"}</span>
-        <span>{photo ? "实拍" : "示意图"}</span>
+        <span>{photo ? "照片" : "示意图"}</span>
       </figcaption>
     </figure>
   )
