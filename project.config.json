@@ -1,0 +1,25 @@
+{
+  "description": "留不留微信小程序。用微信开发者工具打开本仓库，小程序目录是 miniprogram。",
+  "miniprogramRoot": "miniprogram/",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false,
+    "compileHotReLoad": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true,
+    "packNpmRelationList": [],
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "libVersion": "3.6.5",
+  "appid": "touristappid",
+  "projectname": "liubuliu",
+  "condition": {}
+}

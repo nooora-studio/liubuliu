@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="h1">我的纠结</view>
+  <view class="muted intro">这里只有这台手机的微信记得的东西。示例帖子不算你的。清掉之后，你发的、投的、写的都会消失。</view>
+  <view class="btn btn-line" bindtap="clear">清掉本地记录</view>
+
+  <view class="section">我发出去的</view>
+  <view wx:if="{{mine.length == 0}}" class="card empty">
+    <view class="title">你还没往这里放过衣服</view>
+    <view class="muted">挂在门后那件，写清楚你哪里看不顺眼，再拿给别人看。</view>
+    <navigator class="btn gap" url="/pages/compose/compose" hover-class="none">发一条纠结</navigator>
+  </view>
+  <view class="card post" wx:for="{{mine}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+    <look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" framed="{{false}}" />
+    <view class="title">{{item.title}}</view>
+    <view class="muted tiny">{{item.deadline}} · {{item.verdictLabel}}</view>
+  </view>
+
+  <view class="section">我帮别人看过的</view>
+  <view wx:if="{{helped.length == 0}}" class="muted">你还没投过票，也没写过意见。</view>
+  <view class="card post" wx:for="{{helped}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+    <view class="title">{{item.title}}</view>
+    <view class="muted tiny">{{item.myVoteLabel || '你写过意见'}} · {{item.deadline}}</view>
+  </view>
+
+  <dock current="me" />
+</view>

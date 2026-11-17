@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "留不留",
+  "usingComponents": {
+    "look": "/components/look/look",
+    "dock": "/components/dock/dock"
+  }
+}

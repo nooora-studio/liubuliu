@@ -1,0 +1,5 @@
+<view class="dock">
+  <view class="item {{current == 'feed' ? 'on' : ''}}" data-url="/pages/feed/feed" bindtap="go">社区</view>
+  <navigator class="post" url="/pages/compose/compose" hover-class="none">发一条</navigator>
+  <view class="item {{current == 'me' ? 'on' : ''}}" data-url="/pages/me/me" bindtap="go">我的</view>
+</view>

@@ -1,0 +1,68 @@
+<view class="page" wx:if="{{missing}}">
+  <view class="h1">这条纠结不在这台手机里</view>
+  <view class="muted gap">示例帖子一直都在。你自己发的如果清掉了，就找不回来。</view>
+  <view class="btn gap" bindtap="back">回到社区</view>
+</view>
+
+<view class="page" wx:elif="{{post}}">
+  <view class="muted back" bindtap="back">返回社区</view>
+  <look illustration="{{post.illustration}}" image="{{post.image}}" category="{{post.category}}" />
+  <view class="item-line">{{post.item || post.category}} · {{post.priceText}}{{post.channel ? ' · ' + post.channel : ''}}</view>
+  <view class="tags">
+    <text class="tag tag-{{post.tone}}">{{post.deadline}}</text>
+    <text class="tag">{{post.kindLabel}}</text>
+    <text class="tag tag-{{post.verdictTone}}">{{post.verdictLabel}}</text>
+  </view>
+  <view class="h1 title">{{post.title}}</view>
+  <view class="muted tiny">{{post.who}}</view>
+  <view class="story">{{post.story}}</view>
+
+  <view class="card block">
+    <view class="votes">
+      <text class="keep">留 {{post.keep}}</text>
+      <text class="muted tiny">{{post.voteLine}}</text>
+      <text class="return">退 {{post.ret}}</text>
+    </view>
+    <view class="bar">
+      <view class="bar-keep" style="width: {{post.keepShare}}%;"></view>
+      <view class="bar-return" style="width: {{post.returnShare}}%;"></view>
+    </view>
+    <view wx:if="{{post.decision}}" class="muted gap">作者已经拍板，投票停了。</view>
+    <view wx:elif="{{post.mine}}" class="muted gap">这是你发的。你不能给自己投票，听完再决定留还是退。</view>
+    <view wx:else class="actions">
+      <view class="btn {{post.myVote == 'keep' ? '' : 'btn-line'}}" data-stance="keep" bindtap="vote">留下</view>
+      <view class="btn {{post.myVote == 'return' ? 'btn-return' : 'btn-line'}}" data-stance="return" bindtap="vote">退掉</view>
+    </view>
+    <view wx:if="{{post.mine && !post.decision}}" class="btn gap" bindtap="decide">我决定了</view>
+    <view wx:if="{{post.decision == 'kept'}}" class="stamp keep">已经留下</view>
+    <view wx:if="{{post.decision == 'returned'}}" class="stamp return">已经退掉</view>
+  </view>
+
+  <view class="section">具体意见</view>
+  <view wx:if="{{post.opinions.length == 0}}" class="muted">还没有人写。好看不够，说一下哪里值得留、哪里该退。</view>
+  <view class="card opinion" wx:for="{{post.opinions}}" wx:key="id">
+    <view class="row between">
+      <text class="tag tag-{{item.stance}}">{{item.stanceLabel}}</text>
+      <text wx:if="{{item.mine}}" class="tiny" data-id="{{item.id}}" bindtap="withdraw">撤回</text>
+    </view>
+    <view class="body">{{item.text}}</view>
+    <view class="muted tiny">{{item.who}}{{item.mine ? ' · 你写的' : ''}}</view>
+  </view>
+
+  <view class="section">你来写一句</view>
+  <view class="muted tiny">点一句开头，再改成你自己的话。写完才会发出去。</view>
+  <view class="starter" wx:for="{{starters}}" wx:key="text" data-index="{{index}}" bindtap="useStarter">{{item.text}}</view>
+  <view class="row stances">
+    <view
+      wx:for="{{stances}}"
+      wx:key="id"
+      class="chip {{stance == item.id ? 'chip-on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="setStance"
+    >{{item.label}}</view>
+  </view>
+  <input class="field" placeholder="怎么称呼你" value="{{author}}" maxlength="12" bindinput="onAuthor" />
+  <textarea class="field area" placeholder="写具体一点：版型、颜色、会不会和已有的重复、怎么搭。" value="{{text}}" maxlength="180" bindinput="onText" />
+  <view wx:if="{{error}}" class="return tiny">{{error}}</view>
+  <view class="btn gap" bindtap="send">写下这条意见</view>
+</view>

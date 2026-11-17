@@ -1,0 +1,85 @@
+.intro {
+  margin-top: 16rpx;
+}
+
+.scroller {
+  margin-top: 28rpx;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.sorts {
+  display: flex;
+  margin: 16rpx 0 28rpx;
+}
+
+.sort {
+  margin-right: 24rpx;
+  color: #5c5348;
+  font-size: 26rpx;
+}
+
+.sort-on {
+  color: #1c1915;
+  border-bottom: 2rpx solid #8c6a3d;
+}
+
+.section {
+  margin: 8rpx 0 16rpx;
+  color: #5c5348;
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+}
+
+.post {
+  margin-bottom: 24rpx;
+}
+
+.tags {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+}
+
+.title {
+  margin-top: 12rpx;
+  font-size: 36rpx;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.blurb,
+.item-line,
+.foot {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.votes {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  font-size: 26rpx;
+}
+
+.tiny {
+  font-size: 22rpx;
+}
+
+.brass {
+  color: #8c6a3d;
+}
+
+.empty {
+  padding: 48rpx 28rpx;
+}
+
+.small {
+  font-size: 40rpx;
+  margin-bottom: 12rpx;
+}
+
+.note {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+}

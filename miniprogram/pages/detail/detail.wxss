@@ -1,0 +1,97 @@
+.back {
+  margin-bottom: 20rpx;
+}
+
+.item-line,
+.story,
+.body {
+  margin-top: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+.tags,
+.stances {
+  margin-top: 20rpx;
+}
+
+.title {
+  margin-top: 20rpx;
+  font-size: 44rpx;
+}
+
+.tiny {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+}
+
+.block,
+.opinion,
+.starter {
+  margin-top: 20rpx;
+}
+
+.votes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.actions .btn {
+  flex: 1;
+}
+
+.btn-return {
+  background: #9d3428;
+  color: #f7f3eb;
+  border: none;
+}
+
+.gap {
+  margin-top: 24rpx;
+}
+
+.stamp {
+  margin-top: 20rpx;
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.section {
+  margin-top: 40rpx;
+  color: #5c5348;
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+}
+
+.between {
+  justify-content: space-between;
+}
+
+.starter {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid rgba(28, 25, 21, 0.1);
+  color: #5c5348;
+  font-size: 26rpx;
+}
+
+.field {
+  margin-top: 16rpx;
+  width: 100%;
+  box-sizing: border-box;
+  background: #f7f3eb;
+  border: 1rpx solid rgba(28, 25, 21, 0.16);
+  padding: 20rpx;
+  font-size: 28rpx;
+}
+
+.area {
+  height: 200rpx;
+}

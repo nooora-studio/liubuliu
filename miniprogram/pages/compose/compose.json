@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "发一条纠结",
+  "usingComponents": {
+    "look": "/components/look/look"
+  }
+}

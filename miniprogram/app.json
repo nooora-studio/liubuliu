@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "pages/feed/feed",
+    "pages/detail/detail",
+    "pages/compose/compose",
+    "pages/me/me"
+  ],
+  "window": {
+    "navigationBarTitleText": "留不留",
+    "navigationBarBackgroundColor": "#e7e0d2",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#e7e0d2",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

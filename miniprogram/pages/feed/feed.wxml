@@ -1,0 +1,81 @@
+<view class="page">
+  <view class="h1">还挂在门后的衣服</view>
+  <view class="muted intro">退货期短的排在前面。点进去投留或退，也可以只说怎么搭。</view>
+
+  <scroll-view class="scroller" scroll-x enable-flex>
+    <view
+      wx:for="{{filters}}"
+      wx:key="id"
+      class="chip {{filter == item.id ? 'chip-on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="setFilter"
+    >{{item.label}}</view>
+  </scroll-view>
+  <view class="sorts">
+    <view
+      wx:for="{{sorts}}"
+      wx:key="id"
+      class="sort {{sort == item.id ? 'sort-on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="setSort"
+    >{{item.label}}</view>
+  </view>
+
+  <view wx:if="{{empty}}" class="card empty">
+    <view class="h1 small">这个筛子底下是空的</view>
+    <view class="muted">换一个看，或者把你挂在门后的那件发上来。</view>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{featured}}">
+      <view class="section">最难拍板</view>
+      <view class="card post" data-id="{{featured.id}}" bindtap="open">
+        <look illustration="{{featured.illustration}}" image="{{featured.image}}" category="{{featured.category}}" />
+        <view class="tags">
+          <text class="tag tag-{{featured.tone}}">{{featured.deadline}}</text>
+          <text class="muted tiny">{{featured.kindLabel}}</text>
+        </view>
+        <view class="title">{{featured.title}}</view>
+        <view class="muted blurb">{{featured.blurb}}</view>
+        <view class="item-line">{{featured.item || featured.category}} · {{featured.priceText}}{{featured.channel ? ' · ' + featured.channel : ''}}</view>
+        <view class="votes">
+          <text class="keep">留 {{featured.keep}}</text>
+          <text class="muted tiny">{{featured.peopleLine}}</text>
+          <text class="return">退 {{featured.ret}}</text>
+        </view>
+        <view class="bar">
+          <view class="bar-keep" style="width: {{featured.keepShare}}%;"></view>
+          <view class="bar-return" style="width: {{featured.returnShare}}%;"></view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{rest.length}}">
+      <view class="section" wx:if="{{featured}}">其余的纠结</view>
+      <view class="card post" wx:for="{{rest}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+        <look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" />
+        <view class="tags">
+          <text class="tag tag-{{item.tone}}">{{item.deadline}}</text>
+          <text class="muted tiny">{{item.kindLabel}}</text>
+          <text wx:if="{{item.mine}}" class="tiny brass">你发的</text>
+          <text wx:if="{{item.myVoteLabel}}" class="tiny">{{item.myVoteLabel}}</text>
+        </view>
+        <view class="title">{{item.title}}</view>
+        <view class="muted blurb">{{item.blurb}}</view>
+        <view class="votes">
+          <text class="keep">留 {{item.keep}}</text>
+          <text class="muted tiny">{{item.peopleLine}}</text>
+          <text class="return">退 {{item.ret}}</text>
+        </view>
+        <view class="bar">
+          <view class="bar-keep" style="width: {{item.keepShare}}%;"></view>
+          <view class="bar-return" style="width: {{item.returnShare}}%;"></view>
+        </view>
+        <view class="muted tiny foot">{{item.opinions.length}} 条具体意见 · {{item.who}}</view>
+      </view>
+    </view>
+  </block>
+
+  <view class="muted note">带「示意图」的是示例纠结。你发的帖、投的票和写的意见只存在这台手机的微信里。</view>
+  <dock current="feed" />
+</view>

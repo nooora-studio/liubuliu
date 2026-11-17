@@ -1,0 +1,31 @@
+.intro {
+  margin: 16rpx 0 24rpx;
+}
+
+.section {
+  margin: 40rpx 0 16rpx;
+  color: #5c5348;
+  font-size: 22rpx;
+  letter-spacing: 6rpx;
+}
+
+.empty,
+.post {
+  margin-bottom: 20rpx;
+}
+
+.title {
+  margin-top: 12rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.tiny {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+}
+
+.gap {
+  margin-top: 24rpx;
+}

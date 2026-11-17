@@ -1,0 +1,57 @@
+<view class="page">
+  <view class="h1">把那件衣服放上来</view>
+  <view class="muted intro">写你自己看不出来的那一点。已经有的类似单品、准备配什么、最担心哪里，这些比“好看吗”有用。</view>
+
+  <look illustration="{{illustration}}" image="{{image}}" category="{{category}}" />
+  <view class="row gap">
+    <view class="btn" bindtap="choosePhoto">{{reading ? '正在处理照片…' : (image ? '换一张照片' : '从相册选一张')}}</view>
+    <view wx:if="{{image}}" class="btn btn-line side" bindtap="clearPhoto">改用示意图</view>
+  </view>
+  <view class="muted tiny">没有照片也可以。选一个接近的示意图，别人知道你在问哪一类。</view>
+
+  <view class="label">示意图</view>
+  <view class="wrap">
+    <view
+      wx:for="{{illustrations}}"
+      wx:key="id"
+      class="chip {{illustration == item.id && !image ? 'chip-on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="setIllustration"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="label">你在问什么</view>
+  <view class="wrap">
+    <view wx:for="{{kinds}}" wx:key="id" class="chip {{kind == item.id ? 'chip-on' : ''}}" data-id="{{item.id}}" bindtap="setKind">{{item.label}}</view>
+  </view>
+
+  <view class="label">哪一类</view>
+  <view class="wrap">
+    <view wx:for="{{categories}}" wx:key="*this" class="chip {{category == item ? 'chip-on' : ''}}" data-id="{{item}}" bindtap="setCategory">{{item}}</view>
+  </view>
+
+  <view class="label">一句话</view>
+  <input class="field" placeholder="例如：骆驼色大衣，明天就得决定退不退" value="{{title}}" maxlength="40" bindinput="onTitle" />
+  <view wx:if="{{errors.title}}" class="return tiny">{{errors.title}}</view>
+
+  <view class="label">你看不顺眼的地方</view>
+  <textarea class="field area" placeholder="灯光、已有的类似单品、最担心的地方。" value="{{story}}" maxlength="400" bindinput="onStory" />
+  <view wx:if="{{errors.story}}" class="return tiny">{{errors.story}}</view>
+
+  <view class="label">这件是什么</view>
+  <input class="field" placeholder="例如：米白圆领针织" value="{{item}}" maxlength="24" bindinput="onItem" />
+
+  <view class="label">价格，可以空着</view>
+  <input class="field" placeholder="数字" type="number" value="{{price}}" maxlength="6" bindinput="onPrice" />
+  <view wx:if="{{errors.price}}" class="return tiny">{{errors.price}}</view>
+
+  <view class="label">在哪买的</view>
+  <input class="field" placeholder="专柜、优衣库、直播间" value="{{channel}}" maxlength="16" bindinput="onChannel" />
+
+  <view class="label">还能退几天</view>
+  <view class="wrap">
+    <view wx:for="{{days}}" wx:key="label" class="chip {{dayIndex == index ? 'chip-on' : ''}}" data-index="{{index}}" bindtap="setDay">{{item.label}}</view>
+  </view>
+
+  <view class="btn submit" bindtap="submit">发到社区</view>
+</view>

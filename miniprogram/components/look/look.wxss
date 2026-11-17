@@ -1,0 +1,149 @@
+.frame {
+  background: #f7f3eb;
+  padding: 12rpx 12rpx 16rpx;
+}
+
+.photo-wrap,
+.sheet {
+  width: 100%;
+  height: 0;
+  padding-top: 125%;
+  background: #efe8dc;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sheet::before,
+.sheet::after {
+  content: "";
+  position: absolute;
+}
+
+.sheet-knit {
+  background: #f3eee6;
+}
+.sheet-knit::before {
+  left: 22%;
+  right: 22%;
+  top: 28%;
+  bottom: 18%;
+  background: #f7f3ea;
+  border-radius: 28rpx 28rpx 8rpx 8rpx;
+  box-shadow: inset 0 -18rpx 0 #e4d8c6;
+}
+
+.sheet-trousers {
+  background: #e5e1d4;
+}
+.sheet-trousers::before {
+  left: 28%;
+  right: 28%;
+  top: 22%;
+  bottom: 16%;
+  background: #556244;
+  clip-path: polygon(8% 0, 92% 0, 100% 100%, 58% 100%, 50% 46%, 42% 100%, 0 100%);
+}
+
+.sheet-coat {
+  background: #f0e6d4;
+}
+.sheet-coat::before {
+  left: 24%;
+  right: 24%;
+  top: 16%;
+  bottom: 12%;
+  background: #c6a36e;
+  clip-path: polygon(50% 0, 78% 18%, 96% 100%, 62% 92%, 58% 48%, 50% 100%, 42% 48%, 38% 92%, 4% 100%, 22% 18%);
+}
+
+.sheet-skirt {
+  background: #f6eee8;
+}
+.sheet-skirt::before {
+  left: 28%;
+  right: 28%;
+  top: 24%;
+  bottom: 14%;
+  background: #8a3140;
+  clip-path: polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+}
+
+.sheet-shirt {
+  background: #e7eef2;
+}
+.sheet-shirt::before {
+  left: 20%;
+  right: 20%;
+  top: 22%;
+  bottom: 16%;
+  background: repeating-linear-gradient(90deg, #243e63 0 10rpx, #f7fbfd 10rpx 28rpx);
+  clip-path: polygon(18% 18%, 38% 0, 62% 0, 82% 18%, 100% 34%, 82% 46%, 78% 100%, 22% 100%, 18% 46%, 0 34%);
+}
+
+.sheet-sneakers {
+  background: #f4f1ea;
+}
+.sheet-sneakers::before {
+  left: 12%;
+  right: 10%;
+  top: 42%;
+  height: 18%;
+  background: #fbfaf7;
+  border-radius: 40rpx 48rpx 12rpx 12rpx;
+  box-shadow: 0 22rpx 0 #c9834a, 36rpx 78rpx 0 #f7f4ee, 36rpx 100rpx 0 #d9a06a;
+}
+
+.sheet-blazer {
+  background: #eceae6;
+}
+.sheet-blazer::before {
+  left: 22%;
+  right: 22%;
+  top: 20%;
+  bottom: 14%;
+  background: #2a2927;
+  clip-path: polygon(18% 16%, 40% 0, 60% 0, 82% 16%, 100% 78%, 78% 88%, 70% 48%, 62% 100%, 38% 100%, 30% 48%, 22% 88%, 0 78%);
+}
+
+.sheet-dress {
+  background: #f7f1ea;
+}
+.sheet-dress::before {
+  left: 30%;
+  right: 30%;
+  top: 18%;
+  bottom: 12%;
+  background: #f4e7dc;
+  border-radius: 80rpx 80rpx 12rpx 12rpx;
+  box-shadow: -28rpx 80rpx 0 #d98472, 36rpx 120rpx 0 #e7a090, -8rpx 180rpx 0 #c46b5e;
+}
+
+.sheet-hoodie {
+  background: #ececee;
+}
+.sheet-hoodie::before {
+  left: 24%;
+  right: 24%;
+  top: 22%;
+  bottom: 16%;
+  background: #c5c6cb;
+  border-radius: 70rpx 70rpx 12rpx 12rpx;
+}
+
+.cap {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12rpx;
+  padding: 0 8rpx;
+  color: #5c5348;
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+}

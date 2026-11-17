@@ -1,0 +1,9 @@
+{
+  "desc": "留不留",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}
