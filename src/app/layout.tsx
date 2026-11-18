@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     default: "留不留",
     template: "%s · 留不留",
   },
-  description: "买了衣服不知道该不该留、搭得好不好看，发上来让大家帮你看一眼。",
+  description: "买了东西不知道该不该留、搭得好不好看，发上来让大家帮你看一眼。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

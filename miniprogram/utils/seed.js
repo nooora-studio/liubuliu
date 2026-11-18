@@ -10,7 +10,7 @@ const SEED = [
     postedLabel: "昨天",
     createdAt: ANCHOR - 6 * 60 * 60 * 1000,
     kind: "keep",
-    category: "外套",
+    category: "服饰",
     title: "骆驼色大衣，明天就得决定退不退",
     story:
       "双十一在专柜买的，当时摸着手感很好，营业员说这个长度刚好。挂在门后两天，我越看越觉得自己是黄皮，这个颜色会把脸衬得更暗。可长度确实盖住了腿最粗的地方，黑大衣我已经有一件了。899 不便宜，退了怕后悔，留了怕它一直挂着。我家的灯是暖的，我分不清是衣服的问题还是灯的问题。",
@@ -55,7 +55,7 @@ const SEED = [
     postedLabel: "今天",
     createdAt: ANCHOR - 2 * 60 * 60 * 1000,
     kind: "keep",
-    category: "上衣",
+    category: "服饰",
     title: "米白针织是干净，还是把我撑肿了",
     story:
       "店里灯白，我觉得很干净。回家拍了十几张，肩膀那一段越看越宽，像把我横向拉了一寸。衣柜里已经有一件燕麦色，这件只是更白。朋友说好看，我妈说显胖。退货还剩两天，我把它叠好又拆开三次。",
@@ -100,7 +100,7 @@ const SEED = [
     postedLabel: "两天前",
     createdAt: ANCHOR - 2 * DAY,
     kind: "both",
-    category: "裤装",
+    category: "服饰",
     title: "这条绿裤子我喜欢，但不知道配什么才能出门",
     story:
       "垂感是我要的，颜色也少见。问题是衣柜几乎全是黑白灰和蓝牛仔，我想象不出一套完整的出门样子。如果只能配黑 T，是不是没必要留？我怕买回去洗一次就再也不碰。",
@@ -145,7 +145,7 @@ const SEED = [
     postedLabel: "三天前",
     createdAt: ANCHOR - 3 * DAY,
     kind: "both",
-    category: "裙装",
+    category: "服饰",
     title: "上班能不能穿这条枣红裙",
     story:
       "周末我一定敢穿。周一开会我就开始犹豫。面料不透，长度到小腿中段，其实没有很短。可我们办公室全是藏青和灰。我想知道配深灰针织和乐福鞋，会不会收敛成能坐进会议室的样子，还是颜色本身就太跳。",
@@ -190,7 +190,7 @@ const SEED = [
     postedLabel: "三天前",
     createdAt: ANCHOR - 3 * DAY + 4 * 60 * 60 * 1000,
     kind: "keep",
-    category: "上衣",
+    category: "服饰",
     title: "细条纹衬衫会不会一下子变老气",
     story:
       "我想要一件能塞进裤子的衬衫。这件领子偏硬，条细，颜色是海军蓝不是淡蓝。我 28 岁，怕穿上像去开家长会。版型其实收腰，不是直筒爸爸衫。挂在那里我一会儿觉得经典，一会儿觉得像借了我爸的。",
@@ -235,7 +235,7 @@ const SEED = [
     postedLabel: "四天前",
     createdAt: ANCHOR - 4 * DAY,
     kind: "keep",
-    category: "鞋",
+    category: "服饰",
     title: "家里已经有一双白鞋，这双还留吗",
     story:
       "旧的那双鞋头脏了，怎么洗都有一块灰。新的底更厚，走路舒服，可也更笨，裤子盖不住的时候特别显脚大。不是非买不可。我只是已经不太想穿旧的那双出门。429，我看着订单犹豫。",
@@ -280,7 +280,7 @@ const SEED = [
     postedLabel: "上周",
     createdAt: ANCHOR - 8 * DAY,
     kind: "style",
-    category: "外套",
+    category: "服饰",
     title: "面试买的黑西装，日常怎么穿才不像去汇报",
     story:
       "已经过了退货期，退不了，所以不是留不留的问题。肩线我喜欢，面料也没有很廉价。它现在只在重要场合出现。我想把它穿去周末吃饭，但一配深色裤子就像一套去见客户。有没有人能告诉我下装和鞋怎么拆开这套汇报感。",
@@ -325,7 +325,7 @@ const SEED = [
     postedLabel: "上周",
     createdAt: ANCHOR - 9 * DAY,
     kind: "both",
-    category: "裙装",
+    category: "服饰",
     title: "碎花裙我留下了，但只敢周末穿",
     story:
       "当时纠结有没有场合。大家说周末够用就值得，我留下了。后来约会穿过两次，自己也觉得好看。平日还是会觉得花得有点满。写在这里给后面的人看：留下不等于天天穿，我现在接受这件事。",
@@ -370,7 +370,7 @@ const SEED = [
     postedLabel: "上周",
     createdAt: ANCHOR - 10 * DAY,
     kind: "keep",
-    category: "上衣",
+    category: "服饰",
     title: "这件灰色卫衣我退了",
     story:
       "版型松，颜色也灰，和我现有的两件几乎没差别。当时觉得再有一件干净的也行。大家说太基础，我当天下午就退了。退完其实松了口气，纠结本身比衣服累。给同样在基础款里打转的人一个参考。",

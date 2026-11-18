@@ -1,64 +1,16 @@
 <view class="page">
   <view class="h1">还挂在门后的衣服</view>
-  <view class="muted intro">都是别人拿不定主意的衣服。快到退货期的排前面，先帮他们看一眼。</view>
-
-  <scroll-view class="scroller" scroll-x enable-flex>
-    <view
-      wx:for="{{filters}}"
-      wx:key="id"
-      class="chip {{filter == item.id ? 'chip-on' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="setFilter"
-    >{{item.label}}</view>
-  </scroll-view>
-  <view class="sorts">
-    <view
-      wx:for="{{sorts}}"
-      wx:key="id"
-      class="sort {{sort == item.id ? 'sort-on' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="setSort"
-    >{{item.label}}</view>
-  </view>
+  <view class="muted intro">都是别人拿不定主意的衣服。先看新发上来的——投一票，或者说一句你实际看到的。</view>
 
   <view wx:if="{{empty}}" class="card empty">
-    <view class="h1 small">这里暂时没有这样的衣服</view>
-    <view class="muted">换个条件看看，或者把你那件拿不定的发上来。</view>
+    <view class="h1 small">还没有人拿不定主意</view>
+    <view class="muted">把你那件拿不定的发上来，让别人帮你看一眼。</view>
     <navigator class="btn gap" url="/pages/compose/compose" hover-class="none">发一条纠结</navigator>
   </view>
 
-  <block wx:else>
-    <view wx:if="{{featured}}">
-      <view class="section">最难拍板</view>
-      <view class="card post row-card" data-id="{{featured.id}}" bindtap="open">
-        <view class="thumb"><look illustration="{{featured.illustration}}" image="{{featured.image}}" category="{{featured.category}}" framed="{{false}}" /></view>
-        <view class="copy">
-        <view class="tags">
-          <text class="tag tag-{{featured.tone}}">{{featured.deadline}}</text>
-          <text class="muted tiny">{{featured.kindLabel}}</text>
-          <text wx:if="{{featured.images.length > 1}}" class="muted tiny">{{featured.images.length}} 张照片</text>
-        </view>
-        <view class="title">{{featured.title}}</view>
-        <view class="muted blurb">{{featured.blurb}}</view>
-        <view class="item-line">{{featured.item || featured.category}} · {{featured.priceText}}{{featured.channel ? ' · ' + featured.channel : ''}}</view>
-        <view class="votes">
-          <text class="keep">留 {{featured.keep}}</text>
-          <text class="muted tiny">{{featured.peopleLine}}</text>
-          <text class="return">退 {{featured.ret}}</text>
-        </view>
-        <view class="bar">
-          <view class="bar-keep" style="width: {{featured.keepShare}}%;"></view>
-          <view class="bar-return" style="width: {{featured.returnShare}}%;"></view>
-        </view>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{rest.length}}">
-      <view class="section" wx:if="{{featured}}">其他还在犹豫的</view>
-      <view class="card post row-card" wx:for="{{rest}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
-        <view class="thumb"><look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" framed="{{false}}" /></view>
-        <view class="copy">
+  <view wx:if="{{!empty}}" class="card post row-card" wx:for="{{posts}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+    <view class="thumb"><look illustration="{{item.illustration}}" image="{{item.image}}" category="{{item.category}}" framed="{{false}}" /></view>
+      <view class="copy">
         <view class="tags">
           <text class="tag tag-{{item.tone}}">{{item.deadline}}</text>
           <text class="muted tiny">{{item.kindLabel}}</text>
@@ -78,10 +30,8 @@
           <view class="bar-return" style="width: {{item.returnShare}}%;"></view>
         </view>
         <view class="muted tiny foot">{{item.opinions.length}} 条评论与补充 · {{item.who}}</view>
-        </view>
       </view>
     </view>
-  </block>
 
   <view class="muted note">标着「示意图」的是示例。登录之后，你发的和投的会记在账号里。</view>
   <dock current="feed" />

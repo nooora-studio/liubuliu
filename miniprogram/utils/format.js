@@ -1,5 +1,5 @@
 const KIND_LABEL = {
-  keep: "要不要留",
+  keep: "留不留",
   style: "怎么搭",
   both: "留和搭配都纠结",
 }

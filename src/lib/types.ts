@@ -1,4 +1,4 @@
-export const CATEGORIES = ["上衣", "裤装", "裙装", "外套", "鞋", "包"] as const
+export const CATEGORIES = ["数码", "美妆", "家居", "服饰", "食品", "其它"] as const
 export const ILLUSTRATIONS = [
   "knit",
   "trousers",
@@ -13,11 +13,17 @@ export const ILLUSTRATIONS = [
 
 export type Category = (typeof CATEGORIES)[number]
 export type Illustration = (typeof ILLUSTRATIONS)[number]
-export type Kind = "keep" | "style" | "both"
+export type Kind = "keep" | "style" | "both" | "compare"
 export type Stance = "keep" | "return" | "style"
 export type Vote = "keep" | "return"
 export type Decision = "kept" | "returned"
 export type ReturnStatus = "known" | "unknown" | "unavailable"
+
+export type CompareOption = {
+  id: string
+  label: string
+  price: number | null
+}
 
 export type Opinion = {
   id: string
@@ -59,6 +65,10 @@ export type Post = {
   returnDeadline?: string | null
   votesClosedAt?: string | null
   decisionReason?: string
+  options?: CompareOption[]
+  optionVotes?: Record<string, number>
+  myOption?: string | null
+  chosenOption?: string | null
 }
 
 export type Persisted = {

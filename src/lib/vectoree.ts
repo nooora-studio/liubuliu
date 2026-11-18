@@ -182,7 +182,9 @@ export async function uploadLook(bytes: Buffer, mime: string, objectKey?: string
   })
   const url = result.data?.url
   if (!result.ok || typeof url !== "string") return ""
-  return url
+  // 存储接口附带版本查询参数；数据库保存稳定的对象地址。
+  const canonical = url.split("?")[0]
+  return canonical === `${LOOK_PREFIX}${key}` ? canonical : ""
 }
 
 export async function deleteLook(url: string) {

@@ -7,7 +7,7 @@
     "enhance": true,
     "postcss": true,
     "minified": false,
-    "compileHotReLoad": true,
+    "compileHotReLoad": false,
     "coverView": true,
     "showShadowRootInWxmlPanel": true,
     "packNpmRelationList": [],

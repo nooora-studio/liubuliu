@@ -30,11 +30,6 @@
   </view>
   </view>
 
-  <view class="label">你在问什么</view>
-  <view class="wrap">
-    <view wx:for="{{kinds}}" wx:key="id" class="chip {{kind == item.id ? 'chip-on' : ''}}" data-id="{{item.id}}" bindtap="setKind">{{item.label}}</view>
-  </view>
-
   <view class="label">哪一类</view>
   <view class="wrap">
     <view wx:for="{{categories}}" wx:key="*this" class="chip {{category == item ? 'chip-on' : ''}}" data-id="{{item}}" bindtap="setCategory">{{item}}</view>

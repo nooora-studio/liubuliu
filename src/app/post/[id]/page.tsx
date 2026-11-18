@@ -25,7 +25,7 @@ export default function PostPage({
     <Suspense
       fallback={
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <p className="font-serif text-2xl">正在打开这件衣服</p>
+          <p className="font-serif text-2xl">正在打开这件东西</p>
         </div>
       }
     >

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import type { Account } from "@/lib/account"
-import type { Decision, Opinion, Post, Stance, Vote } from "@/lib/types"
+import type { Decision, Post } from "@/lib/types"
 
 type Stats = { published: number; voted: number; comments: number }
 type Payload = { user?: Account | null; posts?: Post[]; post?: Post; serverNow?: number; deleted?: boolean; stats?: Stats; message?: string }
@@ -167,7 +167,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       user: snapshot.user,
       displayName: snapshot.user?.name ?? "",
       error: snapshot.error,
-      vote: (id: string, stance: Vote) => send("/api/votes", { method: "POST", body: JSON.stringify({ postId: id, stance }) }, id),
+      vote: (id: string, stance: string) => send("/api/votes", { method: "POST", body: JSON.stringify({ postId: id, stance }) }, id),
       addOpinion: (id: string, input: { id: string; text: string; parentId?: string }) =>
         send("/api/opinions", { method: "POST", body: JSON.stringify({ postId: id, ...input, stance: "style" }) }, id),
       removeOpinion: (postId: string, opinionId: string) => {
@@ -178,12 +178,20 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
           method: "POST",
           body: JSON.stringify({
             id: post.id,
+            title: post.title,
             story: post.story,
+            kind: post.kind,
             price: post.price,
             brand: post.brand,
             desiredEffect: post.desiredEffect,
             returnStatus: post.returnStatus,
             returnDeadline: post.returnDeadline,
+            daysLeft: post.daysLeft,
+            category: post.category,
+            illustration: post.illustration,
+            item: post.item,
+            channel: post.channel,
+            options: post.options,
             images: post.images,
           }),
         }, post.id),
@@ -220,7 +228,7 @@ type CommunityValue = {
   user: Account | null
   displayName: string
   error: string
-  vote: (id: string, stance: Vote) => Promise<boolean>
+  vote: (id: string, stance: string) => Promise<boolean>
   addOpinion: (id: string, input: { id: string; text: string; parentId?: string }) => Promise<boolean>
   removeOpinion: (postId: string, opinionId: string) => Promise<boolean>
   addPost: (post: Post) => Promise<boolean>

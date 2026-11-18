@@ -21,16 +21,20 @@ import {
   deadlineLabel,
   deadlineTone,
   KIND_LABEL,
+  optionTotal,
+  postBody,
   priceLabel,
   STANCE_LABEL,
   verdict,
 } from "@/lib/format"
 import type { Decision, Opinion, Post, Stance, Vote } from "@/lib/types"
+import type { Account } from "@/lib/account"
 import { cn } from "cn"
 
 export function PostDetail({ id }: { id: string }) {
-  const { posts, hydrated, user, displayName, vote, addOpinion, removeOpinion, decide } = useCommunity()
-  const post = posts.find((item) => item.id === id)
+  const { posts, details, hydrated, user, displayName, vote, addOpinion, removeOpinion, decide, updatePost, error } = useCommunity()
+  const detail = details[id]
+  const post = detail?.loaded ? detail.post : posts.find((item) => item.id === id)
 
   if (!post && !hydrated) {
     return (
@@ -46,7 +50,7 @@ export function PostDetail({ id }: { id: string }) {
       <div className="mx-auto max-w-3xl px-4 py-16">
         <p className="font-serif text-3xl">没找到这条纠结</p>
         <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          示例一直都在。如果你还没登录，自己发的可能没存下来。
+          {detail?.error || "这条帖子可能已删除，回社区看看其他纠结。"}
         </p>
         <Link href="/" className="mt-6 inline-block text-sm underline underline-offset-4">
           回到社区
@@ -59,24 +63,31 @@ export function PostDetail({ id }: { id: string }) {
   const tone = deadlineTone(post)
 
   return (
-    <article className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
-      <div className="lg:sticky lg:top-4">
+    <article className="mx-auto max-w-[660px] px-4 pb-12 pt-5 md:px-6 md:pt-8">
+      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+        返回社区
+      </Link>
+      <div className={cn("mx-auto mt-5", post.kind === "compare" ? "w-full max-w-[460px]" : "w-[55%] min-w-[180px] max-w-[240px]")}>
         <PostGallery key={post.id} post={post} />
-        <p className="mt-3 text-sm leading-6">
-          {post.item || post.category}
-          <span className="text-muted-foreground"> · {priceLabel(post.price)}</span>
-          {post.channel ? <span className="text-muted-foreground"> · {post.channel}</span> : null}
-        </p>
       </div>
-
-      <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          返回社区
-        </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <p className="mt-5 text-sm leading-6 md:text-base">
+        {post.kind === "compare" ? (
+          <>
+            {post.options?.length ?? 0} 件候选
+            {post.channel ? <span> · {post.channel}</span> : null}
+          </>
+        ) : (
+          <>
+            {post.item || "这件东西"}
+            {post.price !== null ? <span> · {priceLabel(post.price)}</span> : null}
+            {post.channel ? <span> · {post.channel}</span> : null}
+          </>
+        )}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
           <span
             className={cn(
-              "border px-2 py-0.5",
+              "rounded border px-2 py-0.5",
               tone === "urgent" && "border-return/40 bg-return/10 text-return",
               tone === "done" && "border-keep/30 bg-keep/10 text-keep",
               (tone === "ok" || tone === "late") && "border-foreground/15 text-muted-foreground"
@@ -84,83 +95,81 @@ export function PostDetail({ id }: { id: string }) {
           >
             {deadlineLabel(post)}
           </span>
-          <span className="text-muted-foreground">
-            {post.category} · {KIND_LABEL[post.kind]}
-          </span>
-        </div>
-        <h1 className="mt-3 font-serif text-3xl leading-tight tracking-tight sm:text-4xl">{post.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+          <span className="rounded border border-foreground/15 px-2 py-0.5 text-muted-foreground">{KIND_LABEL[post.kind]}</span>
+          <Stamp label={result.label} tone={result.tone} />
+      </div>
+      <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight md:text-3xl">{post.title}</h1>
+      <p className="mt-2 text-xs text-muted-foreground">
           {post.author}
           {post.city ? ` · ${post.city}` : ""}
           <span> · {post.postedLabel}</span>
           {post.mine ? <span> · 你发的</span> : null}
-        </p>
-        <p className="mt-5 whitespace-pre-wrap text-[15px] leading-7">{post.story}</p>
+      </p>
+      <p className="mt-4 whitespace-pre-wrap break-words text-base leading-[1.8]">{postBody(post)}</p>
 
-        <section className="mt-8 border border-dashed border-foreground/20 bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="font-serif text-xl">留，还是退</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {post.keepVotes + post.returnVotes === 0
-                  ? "还没有人表态。"
-                  : `${post.keepVotes + post.returnVotes} 个人里，${post.keepVotes} 个说留，${post.returnVotes} 个说退。`}
-              </p>
-            </div>
-            <Stamp label={result.label} tone={result.tone} />
-          </div>
-          <div className="mt-4">
+      <section aria-label="投票" className="mt-5 rounded-lg border border-foreground/15 bg-card p-3 md:p-4">
+        {post.kind === "compare" ? (
+          <CompareVote key={post.id} post={post} vote={vote} choose={(optionId) => updatePost(post.id, { action: "decision", optionId })} user={user} />
+        ) : (
+          <>
             <VoteBar post={post} />
-          </div>
+            {post.keepVotes + post.returnVotes > 0 ? (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                {post.keepVotes + post.returnVotes} 个人里，{post.keepVotes} 个说留，{post.returnVotes} 个说退。
+              </p>
+            ) : null}
 
-          {post.mine ? (
-            <DecideBlock
-              decision={post.decision}
-              onDecide={(decision) => decide(post.id, decision, "")}
-            />
-          ) : post.decision ? (
-            <p className="mt-4 text-sm text-muted-foreground">已经决定了，票就停在那一刻。</p>
-          ) : !user ? (
-            <div className="mt-4 border border-dashed border-foreground/20 bg-card px-4 py-6 text-center">
-              <p className="text-sm text-muted-foreground">登录后才能投票、写意见，你的判断会记在账号里。</p>
-              <Link href={`/login?redirect=/post/${post.id}`} className="mt-4 inline-flex h-10 items-center border border-foreground bg-foreground px-4 text-sm text-background">
-                去登录
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <VoteButton
-                stance="keep"
-                pressed={post.myVote === "keep"}
-                onClick={() => vote(post.id, "keep")}
+            {post.mine ? (
+              <DecideBlock
+                decision={post.decision}
+                onDecide={(decision) => decide(post.id, decision, "")}
               />
-              <VoteButton
-                stance="return"
-                pressed={post.myVote === "return"}
-                onClick={() => vote(post.id, "return")}
-              />
-            </div>
-          )}
-          {!post.mine && !post.decision ? (
-            <p className="mt-3 text-xs leading-5 text-muted-foreground">
-              {post.myVote
-                ? "改主意了，点另一边就行。再补一句你为什么这么看。"
-                : "先选一边。选完再补一句：你为什么这么看。"}
-            </p>
-          ) : null}
-        </section>
+            ) : post.decision ? (
+              <p className="mt-4 text-sm text-muted-foreground">已经决定了，票就停在那一刻。</p>
+            ) : !user ? (
+              <div className="mt-4 border-t border-foreground/10 px-2 py-4 text-center">
+                <p className="text-sm text-muted-foreground">登录后才能投票、写意见，你的判断会记在账号里。</p>
+                <Link href={`/login?redirect=/post/${post.id}`} className="mt-4 inline-flex h-10 items-center rounded-md bg-return px-4 text-sm text-white">
+                  去登录
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <VoteButton
+                  stance="keep"
+                  pressed={post.myVote === "keep"}
+                  onClick={() => vote(post.id, "keep")}
+                />
+                <VoteButton
+                  stance="return"
+                  pressed={post.myVote === "return"}
+                  onClick={() => vote(post.id, "return")}
+                />
+              </div>
+            )}
+            {!post.mine && !post.decision ? (
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                {post.myVote
+                  ? "改主意了，点另一边就行。再补一句你为什么这么看。"
+                  : "先选一边。选完再补一句：你为什么这么看。"}
+              </p>
+            ) : null}
+          </>
+        )}
+      </section>
+      {error ? <p role="alert" className="mt-3 text-sm text-return">{error}</p> : null}
 
-        <OpinionSection
+      <OpinionSection
           key={post.id}
           postId={post.id}
           opinions={post.opinions}
           displayName={displayName}
           owner={post.mine}
+          comparing={post.kind === "compare"}
           loggedIn={Boolean(user)}
           onSubmit={(input) => addOpinion(post.id, input)}
           onRemove={(opinionId) => removeOpinion(post.id, opinionId)}
-        />
-      </div>
+      />
     </article>
   )
 }
@@ -169,17 +178,17 @@ function PostGallery({ post }: { post: Post }) {
   const images = post.images?.length ? post.images : post.image ? [post.image] : []
   const [index, setIndex] = useState(0)
   const [open, setOpen] = useState(false)
-  if (!images.length) return <Look illustration={post.illustration} alt={post.title} category={post.category} />
+  if (!images.length) return <Look illustration={post.illustration} alt={post.title} shape="square" />
   const current = images[index] || images[0]
   return (
     <div>
       <button type="button" className="block w-full" aria-label="查看大图" onClick={() => setOpen(true)}>
-        <Look illustration={post.illustration} image={current} alt={`${post.title} · 照片 ${index + 1}`} category={post.category} />
+        <Look illustration={post.illustration} image={current} alt={`${post.title} · 照片 ${index + 1}`} shape="square" />
       </button>
       <p className="mt-2 text-center text-xs text-muted-foreground">{index + 1} / {images.length} · 点图片查看大图</p>
       {images.length > 1 ? <div className="mt-3 grid grid-cols-5 gap-2">{images.map((image, i) => (
         <button key={image} type="button" aria-label={`查看照片 ${i + 1}`} aria-pressed={i === index} onClick={() => setIndex(i)} className={cn("border-2", i === index ? "border-foreground" : "border-transparent")}>
-          <Look illustration={post.illustration} image={image} alt={`照片 ${i + 1}`} framed={false} />
+          <Look illustration={post.illustration} image={image} alt={`照片 ${i + 1}`} framed={false} shape="square" />
         </button>
       ))}</div> : null}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -207,11 +216,11 @@ function Stamp({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 -rotate-6 border-2 px-2 py-1 font-serif text-sm tracking-widest",
+        "inline-flex shrink-0 rounded border px-2 py-0.5 text-xs",
         tone === "keep" && "border-keep text-keep",
         tone === "return" && "border-return text-return",
         tone === "split" && "border-brass text-brass",
-        tone === "open" && "border-foreground/25 text-muted-foreground"
+        tone === "open" && "border-foreground/15 text-muted-foreground"
       )}
     >
       {label}
@@ -235,7 +244,7 @@ function VoteButton({
       aria-pressed={pressed}
       onClick={onClick}
       className={cn(
-        "min-h-16 border px-4 py-3 text-left transition-colors",
+        "min-h-11 rounded-md border px-4 py-2 text-center text-sm transition-colors focus-visible:outline-2 focus-visible:outline-return",
         keep
           ? pressed
             ? "border-keep bg-keep text-background"
@@ -245,11 +254,116 @@ function VoteButton({
             : "border-return/30 bg-card hover:border-return"
       )}
     >
-      <span className="block font-serif text-2xl">{keep ? "留下" : "退掉"}</span>
-      <span className={cn("mt-1 block text-xs", pressed ? "text-background/80" : "text-muted-foreground")}>
-        {keep ? "这件有留下来的理由" : "别再跟它耗着"}
-      </span>
+      {keep ? "留下" : "退掉"}
     </button>
+  )
+}
+
+function CompareVote({
+  post,
+  vote,
+  choose,
+  user,
+}: {
+  post: Post
+  vote: (id: string, stance: string) => Promise<boolean>
+  choose: (optionId: string) => Promise<boolean>
+  user: Account | null
+}) {
+  const total = optionTotal(post)
+  const options = post.options ?? []
+  const decided = Boolean(post.decision || post.chosenOption || post.votesClosedAt)
+  const mine = post.mine
+  const [pending, setPending] = useState(false)
+
+  return (
+    <div>
+      <p className="text-sm font-medium">帮选一个</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {total > 0 ? `${total} 人已选` : "还没有人帮选"}
+      </p>
+      <div className="mt-3 space-y-2">
+        {options.map((opt, index) => {
+          const count = post.optionVotes?.[opt.id] ?? 0
+          const share = total === 0 ? 0 : (count / total) * 100
+          const selected = post.myOption === opt.id
+          const letter = String.fromCharCode(65 + index)
+          const disabled = mine || decided || !user || pending
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              aria-pressed={selected}
+              disabled={disabled}
+              onClick={async () => {
+                setPending(true)
+                try { await vote(post.id, opt.id) } finally { setPending(false) }
+              }}
+              className={cn(
+                "relative w-full overflow-hidden rounded-md border px-3 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-return disabled:cursor-default",
+                selected
+                  ? "border-keep bg-keep/10"
+                  : "border-foreground/15 bg-card hover:border-foreground/30"
+              )}
+            >
+              <div
+                className={cn("absolute inset-y-0 left-0 transition-all", selected ? "bg-keep/15" : "bg-foreground/5")}
+                style={{ width: `${share}%` }}
+              />
+              <div className="relative flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium",
+                      selected ? "bg-keep text-background" : "bg-foreground/10 text-muted-foreground"
+                    )}
+                  >
+                    {letter}
+                  </span>
+                  <span className="break-words text-sm font-medium">{opt.label}</span>
+                  {post.chosenOption === opt.id ? <span className="shrink-0 text-xs text-keep">作者选了</span> : null}
+                  {opt.price !== null ? (
+                    <span className="text-xs text-muted-foreground">{priceLabel(opt.price)}</span>
+                  ) : null}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {count} 票 · {Math.round(share)}%
+                </span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {mine ? (
+        <div className="mt-4 border-t border-foreground/10 pt-4">
+          <p className="text-sm text-muted-foreground">听完大家的建议，选一件，给这次纠结一个结论。</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {options.map((option) => (
+              <Button key={option.id} type="button" variant="outline" disabled={pending} onClick={async () => {
+                setPending(true)
+                try { await choose(option.id) } finally { setPending(false) }
+              }}>
+                {post.chosenOption === option.id ? `已选 ${option.label}` : `我选 ${option.label}`}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : decided ? (
+        <p className="mt-4 text-sm text-muted-foreground">已经决定了，票就停在那一刻。</p>
+      ) : !user ? (
+        <div className="mt-4 border-t border-foreground/10 px-2 py-4 text-center">
+          <p className="text-sm text-muted-foreground">登录后才能投票、写意见，你的判断会记在账号里。</p>
+          <Link href={`/login?redirect=/post/${post.id}`} className="mt-4 inline-flex h-10 items-center rounded-md bg-return px-4 text-sm text-white">
+            去登录
+          </Link>
+        </div>
+      ) : (
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+          {post.myOption ? "改主意了，点另一个选项就行。再补一句你为什么这么看。" : "先选一个。选完再补一句：你为什么选它。"}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -265,7 +379,7 @@ function DecideBlock({
     <div className="mt-4">
       <p className="text-sm text-muted-foreground">这是你发的，不用给自己投票。听完别人的，自己拿主意。</p>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="mt-3 inline-flex h-10 items-center border border-foreground bg-foreground px-4 text-sm text-background">
+        <DialogTrigger className="mt-3 inline-flex h-10 items-center rounded-md bg-return px-4 text-sm text-white">
           {decision ? "改一下结论" : "我决定了"}
         </DialogTrigger>
         <DialogContent>
@@ -306,6 +420,7 @@ function OpinionSection({
   opinions,
   displayName,
   owner,
+  comparing,
   loggedIn,
   onSubmit,
   onRemove,
@@ -314,6 +429,7 @@ function OpinionSection({
   opinions: Opinion[]
   displayName: string
   owner: boolean
+  comparing: boolean
   loggedIn: boolean
   onSubmit: (input: { id: string; text: string }) => Promise<boolean>
   onRemove: (opinionId: string) => void
@@ -351,8 +467,8 @@ function OpinionSection({
   }
 
   return (
-    <section className="mt-8">
-      <h2 className="font-serif text-2xl">评论与补充 <span className="text-sm text-muted-foreground">{opinions.length}</span></h2>
+    <section className="mt-7">
+      <h2 className="text-lg font-semibold text-muted-foreground">评论与补充 <span className="text-xs font-normal">{opinions.length}</span></h2>
 
       {opinions.length === 0 ? (
         <p className="mt-4 border border-dashed border-foreground/20 px-4 py-8 text-sm leading-6 text-muted-foreground">
@@ -363,44 +479,40 @@ function OpinionSection({
       ) : (
         <ol className="mt-4 space-y-3">
           {opinions.map((opinion) => (
-            <li key={opinion.id} className="border border-foreground/10 bg-card px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
+            <li key={opinion.id} className="rounded-lg border border-foreground/15 bg-card px-3 py-3.5">
+              <div className="flex items-center justify-between gap-3 text-xs">
                 <span
                   className={cn(
-                    "border px-1.5 py-0.5",
+                    "rounded border px-2 py-0.5",
                     opinion.stance === "keep" && "border-keep/40 text-keep",
                     opinion.stance === "return" && "border-return/40 text-return",
                     opinion.stance === "style" && "border-brass/50 text-brass"
                   )}
                 >
-                  {opinion.supplement ? "作者补充" : STANCE_LABEL[opinion.stance]}
+                  {opinion.supplement ? "作者补充" : comparing ? "帮选建议" : STANCE_LABEL[opinion.stance]}
                 </span>
-                <span>
-                  {opinion.author}
-                  {opinion.city ? ` · ${opinion.city}` : ""}
-                </span>
-                {opinion.mine ? <span className="text-muted-foreground">你写的</span> : null}
+                {opinion.mine ? (
+                  <button
+                    type="button"
+                    className="text-muted-foreground underline underline-offset-4"
+                    onClick={() => onRemove(opinion.id)}
+                  >
+                    撤回
+                  </button>
+                ) : null}
               </div>
-              <p className="mt-2 text-sm leading-6">{opinion.text}</p>
-              {opinion.mine ? (
-                <button
-                  type="button"
-                  className="mt-2 text-xs text-muted-foreground underline underline-offset-4"
-                  onClick={() => onRemove(opinion.id)}
-                >
-                  撤回这句
-                </button>
-              ) : null}
+              <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{opinion.text}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{opinion.author}{opinion.city ? ` · ${opinion.city}` : ""}{opinion.mine ? " · 你写的" : ""}</p>
             </li>
           ))}
         </ol>
       )}
 
       {loggedIn ? (
-        <form onSubmit={submit} noValidate className="mt-6 border-t border-foreground/20 pt-5">
-          <h3 className="font-serif text-xl">{owner ? "补充想法" : "写评论"}</h3>
+        <form onSubmit={submit} noValidate className="mt-6 border-t border-foreground/15 pt-5">
+          <h3 className="text-lg font-semibold">{owner ? "补充想法" : "写评论"}</h3>
           {!owner ? <p className="mt-1 text-sm text-muted-foreground">可以聊版型、颜色或搭配，写你实际看到的。</p> : null}
-          {!owner ? <fieldset className="mt-3">
+          {!owner && !comparing ? <fieldset className="mt-3">
             <legend className="sr-only">意见分类</legend>
             <div className="mt-2 flex flex-wrap gap-2">
               {(["keep", "return", "style"] as Stance[]).map((item) => (
@@ -410,8 +522,8 @@ function OpinionSection({
                   aria-pressed={stance === item}
                   onClick={() => setStance(item)}
                   className={cn(
-                    "border px-3 py-2 text-sm",
-                    stance === item ? "border-foreground bg-foreground text-background" : "border-foreground/15 bg-card"
+                    "rounded-full border px-3 py-2 text-sm",
+                    stance === item ? "border-return bg-return text-white" : "border-foreground/15 bg-card"
                   )}
                 >
                   {STANCE_LABEL[item]}
@@ -427,7 +539,7 @@ function OpinionSection({
               maxLength={180}
               aria-invalid={Boolean(error)}
               placeholder={owner ? "补充你的想法…" : "写下你的看法…"}
-              className="mt-2 min-h-24"
+              className="mt-2 min-h-32 rounded-none bg-card"
               onChange={(event) => setText(event.target.value)}
             />
             {error ? (
@@ -445,11 +557,11 @@ function OpinionSection({
               value={author}
               maxLength={12}
               placeholder="路过的人"
-              className="mt-2 h-10 max-w-xs"
+              className="mt-2 h-11 rounded-none bg-card"
               onChange={(event) => setAuthorDraft(event.target.value)}
             />
           </div>
-          <Button type="submit" disabled={sending} className="mt-4 h-11 px-4">
+          <Button type="submit" disabled={sending} className="mt-4 h-11 w-full bg-return px-4 text-white hover:bg-return/90">
             {sending ? "正在发布…" : owner ? "发布补充" : "发布评论"}
           </Button>
         </form>

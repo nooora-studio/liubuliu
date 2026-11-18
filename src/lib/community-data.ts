@@ -3,9 +3,9 @@ import type { Category, Illustration, Kind, Opinion, Post, ReturnStatus, Stance,
 import { allRows, deleteLook, deleteRows, insertRow, LOOK_PREFIX, patchRows, rows, ServiceError, uploadLook } from "@/lib/vectoree"
 
 type Row = Record<string, unknown>
-const CATEGORIES = new Set(["上衣", "裤装", "裙装", "外套", "鞋", "包"])
+const CATEGORIES = new Set(["数码", "美妆", "家居", "服饰", "食品", "其它"])
 const ILLUSTRATIONS = new Set(["knit", "trousers", "coat", "skirt", "shirt", "sneakers", "blazer", "dress", "hoodie"])
-const KINDS = new Set(["keep", "style", "both"])
+const KINDS = new Set(["keep", "style", "both", "compare"])
 const STANCES = new Set(["keep", "return", "style"])
 const VOTES = new Set(["keep", "return"])
 const DEMO_IDS = new Set(["camel-coat", "cream-knit", "olive-trousers", "burgundy-skirt", "stripe-shirt", "white-trainers", "black-blazer", "floral-dress", "grey-hoodie"])
@@ -37,18 +37,14 @@ function visible(row: Row) {
     row.status !== "publishing" && row.is_demo !== true && !DEMO_IDS.has(text(row.id))
 }
 
+function publishedPost(row: Row) {
+  return visible(row) && Boolean(lookUrl(row.image_url))
+}
+
 export function validDeadline(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
   const time = Date.parse(`${value}T00:00:00Z`)
   return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === value
-}
-
-function returnFields(input: Row, legacy = false) {
-  const status = input.returnStatus ?? (legacy ? "unknown" : undefined)
-  if (!["known", "unknown", "unavailable"].includes(String(status))) fail("请选择退货状态。")
-  const deadline = input.returnDeadline ?? null
-  if (status === "known" ? !validDeadline(deadline) : deadline !== null) fail("截止日期须为有效的 YYYY-MM-DD；未知或不能退时须为空。")
-  return { return_status: status, return_deadline: deadline }
 }
 
 export function daysUntil(deadline: string, now = Date.now()) {
@@ -66,7 +62,7 @@ function lookUrl(value: unknown) {
 async function postRow(id: string, includeDeleted = false) {
   idValue(id)
   const row = (await rows("posts", `?id=eq.${encodeURIComponent(id)}&limit=1`))[0]
-  if (!row || (!includeDeleted && !visible(row))) fail("帖子不存在或已不可用。", 404, "POST_UNAVAILABLE")
+  if (!row || (!includeDeleted && !publishedPost(row))) fail("帖子不存在或已不可用。", 404, "POST_UNAVAILABLE")
   if (row.is_demo === true || DEMO_IDS.has(id)) fail("演示内容不接受真实互动。", 403, "DEMO_READ_ONLY")
   return row
 }
@@ -98,12 +94,18 @@ export function visibleOpinions(opinions: Row[], postId: string) {
   })
 }
 
-function asPost(row: Row, account: Account | null, votes: Row[], opinions: Row[], images: Row[], now: number): Post {
+function asPost(row: Row, account: Account | null, votes: Row[], opinions: Row[], images: Row[], options: Row[], now: number): Post {
   const id = text(row.id)
+  const kind = KINDS.has(text(row.kind)) ? row.kind as Kind : "keep"
   const relatedVotes = new Map<string, Row>()
   for (const vote of votes) {
-    if (row.kind !== "style" && vote.post_id === id && VOTES.has(text(vote.stance)) && visible(vote) && vote.user_id !== row.user_id) {
-      relatedVotes.set(text(vote.user_id), vote)
+    if (vote.post_id === id && visible(vote) && vote.user_id !== row.user_id) {
+      if (kind === "compare") {
+        // 比较帖的 stance 存的是选项 id
+        relatedVotes.set(text(vote.user_id), vote)
+      } else if (row.kind !== "style" && VOTES.has(text(vote.stance))) {
+        relatedVotes.set(text(vote.user_id), vote)
+      }
     }
   }
   const mine = row.user_id === account?.id
@@ -118,20 +120,44 @@ function asPost(row: Row, account: Account | null, votes: Row[], opinions: Row[]
   const returnStatus: ReturnStatus = ["known", "unknown", "unavailable"].includes(text(row.return_status))
     ? row.return_status as ReturnStatus : "unknown"
   const deadline = returnStatus === "known" && validDeadline(row.return_deadline) ? row.return_deadline : null
+  // 比较帖的选项
+  const postOptions = kind === "compare"
+    ? options.filter((o) => o.post_id === id)
+        .sort((a, b) => Number(a.position) - Number(b.position))
+        .map((o) => ({
+          id: text(o.id),
+          label: text(o.label),
+          price: o.price !== null && o.price !== undefined && Number.isFinite(Number(o.price)) ? Number(o.price) : null,
+        }))
+    : undefined
+  const optionIds = new Set(postOptions?.map((o) => o.id))
+  const optionVotes: Record<string, number> = {}
+  if (kind === "compare") {
+    for (const o of postOptions ?? []) optionVotes[o.id] = 0
+    for (const vote of relatedVotes.values()) {
+      const optId = text(vote.stance)
+      if (optionIds.has(optId)) optionVotes[optId] = (optionVotes[optId] ?? 0) + 1
+    }
+  }
+  const myOption = kind === "compare" && account ? (optionIds.has(text(relatedVotes.get(account.id)?.stance)) ? text(relatedVotes.get(account.id)!.stance) : null) : undefined
   return {
     id, author: text(row.author_name).slice(0, 12) || "用户", city: "",
     postedLabel: age === 0 ? "今天" : age === 1 ? "昨天" : `${age} 天前`, createdAt,
-    kind: KINDS.has(text(row.kind)) ? row.kind as Kind : "keep",
-    category: CATEGORIES.has(text(row.category)) ? row.category as Category : "上衣",
+    kind,
+    category: CATEGORIES.has(text(row.category)) ? row.category as Category : "其它",
     illustration: ILLUSTRATIONS.has(text(row.illustration)) ? row.illustration as Illustration : "knit",
     title: text(row.title), story: text(row.story), item: text(row.item), channel: text(row.channel),
     price: row.price !== null && row.price !== undefined && Number.isFinite(Number(row.price)) ? Number(row.price) : null,
     brand: text(row.brand), desiredEffect: text(row.desired_effect), returnStatus, returnDeadline: deadline,
-    daysLeft: deadline ? daysUntil(deadline, now) : null,
+    daysLeft: deadline ? daysUntil(deadline, now) : (row.days_left !== null && row.days_left !== undefined && Number.isFinite(Number(row.days_left)) ? Number(row.days_left) : null),
     votesClosedAt: text(row.votes_closed_at) || null, decisionReason: text(row.decision_reason),
     image: gallery[0], images: gallery,
     keepVotes: [...relatedVotes.values()].filter((vote) => vote.stance === "keep").length,
     returnVotes: [...relatedVotes.values()].filter((vote) => vote.stance === "return").length,
+    options: postOptions,
+    optionVotes: kind === "compare" ? optionVotes : undefined,
+    myOption,
+    chosenOption: kind === "compare" && optionIds.has(text(row.decision)) ? text(row.decision) : null,
     opinions: visibleOpinions(opinions, id).map((opinion): Opinion => ({
       id: text(opinion.id), parentId: text(opinion.parent_id) || null,
       author: text(opinion.author_name).slice(0, 12) || "用户", city: "",
@@ -139,22 +165,23 @@ function asPost(row: Row, account: Account | null, votes: Row[], opinions: Row[]
       text: text(opinion.body), mine: account?.id === opinion.user_id, supplement: row.user_id === opinion.user_id,
     })),
     decision: row.decision === "kept" || row.decision === "returned" ? row.decision : null,
-    mine, myVote: mine ? null : myVote ?? null,
+    mine, myVote: mine || kind === "compare" ? null : myVote ?? null,
   }
 }
 
 async function relatedRows(postId?: string) {
   const query = postId ? `?post_id=eq.${encodeURIComponent(postId)}` : ""
-  const [votes, opinions, images] = await Promise.all([
+  const [votes, opinions, images, options] = await Promise.all([
     allRows("votes", query), allRows("opinions", query), allRows("post_images", query),
+    postId ? allRows("post_options", query) : allRows("post_options"),
   ])
-  return { votes, opinions, images }
+  return { votes, opinions, images, options }
 }
 
 export async function communityPayload(account: Account | null) {
   const [posts, related] = await Promise.all([allRows("posts"), relatedRows()])
   const serverNow = Date.now()
-  return { user: account, posts: posts.filter(visible).map((row) => asPost(row, account, related.votes, related.opinions, related.images, serverNow)), serverNow }
+  return { user: account, posts: posts.filter(publishedPost).map((row) => asPost(row, account, related.votes, related.opinions, related.images, related.options, serverNow)), serverNow }
 }
 
 export async function singlePostPayload(account: Account | null, id: string) {
@@ -163,17 +190,17 @@ export async function singlePostPayload(account: Account | null, id: string) {
   // 关联数据读取过程中可能删除，下发正文与图片前再次核对。
   const row = await postRow(id)
   const serverNow = Date.now()
-  return { post: asPost(row, account, related.votes, related.opinions, related.images, serverNow), serverNow }
+  return { post: asPost(row, account, related.votes, related.opinions, related.images, related.options, serverNow), serverNow }
 }
 
 export async function mePayload(account: Account) {
   const [postRows, related] = await Promise.all([allRows("posts"), relatedRows()])
   const serverNow = Date.now()
-  const available = postRows.filter(visible)
+  const available = postRows.filter(publishedPost)
   const ids = new Set(available.map((row) => row.id))
   const byId = new Map(available.map((row) => [row.id, row]))
   const voted = new Set(related.votes.filter((vote) => ids.has(vote.post_id) && vote.user_id === account.id &&
-    visible(vote) && VOTES.has(text(vote.stance)) && byId.get(vote.post_id)?.kind !== "style" &&
+    visible(vote) && byId.get(vote.post_id)?.kind !== "style" &&
     byId.get(vote.post_id)?.user_id !== account.id).map((vote) => vote.post_id))
   const comments = available.flatMap((post) => visibleOpinions(related.opinions, text(post.id))).filter((row) => row.user_id === account.id)
   const participated = new Set([...voted, ...comments.map((row) => row.post_id)])
@@ -181,7 +208,7 @@ export async function mePayload(account: Account) {
   return {
     user: account, stats: { published: owned.length, voted: voted.size, comments: comments.length },
     posts: available.filter((row) => row.user_id === account.id || participated.has(row.id))
-      .map((row) => asPost(row, account, related.votes, related.opinions, related.images, serverNow)), serverNow,
+      .map((row) => asPost(row, account, related.votes, related.opinions, related.images, related.options, serverNow)), serverNow,
   }
 }
 
@@ -206,10 +233,28 @@ export async function createPost(account: Account, input: Row) {
   const id = idValue(input.id)
   if (!UUID.test(id)) fail("发布编号须为 UUID，请重新发布。")
   const story = field(input.story, 400, "具体纠结", 4)
-  const brand = field(input.brand, 30, "品牌")
-  const desiredEffect = field(input.desiredEffect, 120, "期待效果")
-  const legacyRequest = input.returnStatus === undefined && ("title" in input || "kind" in input || "daysLeft" in input || "category" in input)
-  const returns = returnFields(input, legacyRequest)
+  const title = field(input.title, 40, "一句话说清") || story.split(/\r?\n/)[0].slice(0, 40)
+  field(input.brand, 30, "品牌")
+  field(input.desiredEffect, 120, "期待效果")
+  const kind = KINDS.has(text(input.kind)) ? text(input.kind) as Kind : "keep"
+  const isCompare = kind === "compare"
+  // 比较帖的选项
+  let options: { id: string; label: string; price: number | null }[] = []
+  if (isCompare) {
+    if (!Array.isArray(input.options) || input.options.length < 2) fail("比较帖至少需要两个选项。")
+    if (input.options.length > 6) fail("比较帖最多 6 个选项。")
+    options = input.options.map((raw: unknown, i: number) => {
+      const opt = raw as Row
+      const label = field(opt?.label, 24, `选项 ${i + 1} 名称`, 1)
+      let optPrice: number | null = null
+      if (opt?.price !== undefined && opt?.price !== null && opt?.price !== "") {
+        if (typeof opt.price !== "number" || !Number.isFinite(opt.price) || opt.price < 0 ||
+          opt.price > 999999.99) fail(`选项 ${i + 1} 价格须为 0–999999.99。`)
+        optPrice = opt.price
+      }
+      return { id: globalThis.crypto.randomUUID(), label, price: optPrice }
+    })
+  }
   let price: number | null = null
   if (input.price !== undefined && input.price !== null && input.price !== "") {
     if (typeof input.price !== "number" || !Number.isFinite(input.price) || input.price < 0 ||
@@ -224,22 +269,25 @@ export async function createPost(account: Account, input: Row) {
   const existing = (await rows("posts", `?id=eq.${id}&limit=1`))[0]
   if (existing) {
     if (existing.user_id !== account.id) fail("发布编号已被使用。", 409)
-    if (visible(existing)) return ""
+    if (publishedPost(existing)) return ""
     fail("该次发布尚未完成或已删除，请稍后重试。", 409, "PUBLISH_PENDING")
   }
-  // 主键抢占提交标识，只有成功创建待发布记录的请求可以上传。
+  // 数据库未迁移 status 列，用 image_url 是否为 null 区分待发布/已发布。
   const reservation = await insertRow("posts", {
-    id, user_id: account.id, author_name: account.name || "用户", title: story.split(/\r?\n/)[0].slice(0, 40),
-    story, brand, desired_effect: desiredEffect, ...returns, price, kind: "keep",
-    category: CATEGORIES.has(text(input.category)) ? input.category : "上衣",
+    id, user_id: account.id, author_name: account.name || "用户", title,
+    story, price, kind,
+    category: CATEGORIES.has(text(input.category)) ? input.category : "其它",
     illustration: ILLUSTRATIONS.has(text(input.illustration)) ? input.illustration : "knit",
-    item: field(input.item, 24, "衣服名称"), channel: field(input.channel, 16, "购买渠道"),
-    days_left: null, decision: null, status: "publishing", image_url: null,
+    item: isCompare ? "" : field(input.item, 24, "物品名称"),
+    channel: field(input.channel, 16, "购买渠道"),
+    days_left: input.daysLeft === null || input.daysLeft === undefined ? null :
+      (Number.isFinite(Number(input.daysLeft)) ? Number(input.daysLeft) : null),
+    decision: null, image_url: null,
   })
   if (!reservation.ok) {
     if (reservation.status === 409) {
       const winner = (await rows("posts", `?id=eq.${id}&limit=1`))[0]
-      if (winner?.user_id === account.id && visible(winner)) return ""
+      if (winner?.user_id === account.id && publishedPost(winner)) return ""
       fail("正在发布或编号冲突，请稍后重试。", 409, "PUBLISH_PENDING")
     }
     saved(reservation, "帖子未能创建，请重试。")
@@ -251,30 +299,35 @@ export async function createPost(account: Account, input: Row) {
       const extension = image.mime === "image/png" ? "png" : image.mime === "image/webp" ? "webp" : "jpg"
       const objectKey = `${globalThis.crypto.randomUUID()}.${extension}`
       const expectedUrl = `${LOOK_PREFIX}${objectKey}`
-      // 上传前保存对象键，上传响应丢失时仍可回收或由运营重试清理。
       uploaded.push(expectedUrl)
       saved(await insertRow("post_images", { id: globalThis.crypto.randomUUID(), post_id: id, image_url: expectedUrl, position }), "照片关联保存失败。")
       const imageUrl = await uploadLook(image.bytes, image.mime, objectKey)
       if (imageUrl !== expectedUrl) fail("照片上传失败或返回地址不一致。", 503)
     }
-    saved(await patchRows("posts", `id=eq.${id}&status=eq.publishing&user_id=eq.${encodeURIComponent(account.id)}`, {
-      status: "published", image_url: uploaded[0],
+    // 保存比较帖选项
+    if (isCompare) {
+      for (const [position, opt] of options.entries()) {
+        saved(await insertRow("post_options", {
+          id: opt.id, post_id: id, label: opt.label, price: opt.price, position,
+        }), "选项保存失败。")
+      }
+    }
+    saved(await patchRows("posts", `id=eq.${id}&user_id=eq.${encodeURIComponent(account.id)}&image_url=is.null`, {
+      image_url: uploaded[0],
     }), "发布失败，请重试。")
     const published = (await rows("posts", `?id=eq.${id}&limit=1`))[0]
-    if (!published || published.user_id !== account.id || !visible(published)) fail("发布未完成或已被删除，请刷新确认。", 409, "PUBLISH_CANCELLED")
+    if (!published || published.user_id !== account.id || !publishedPost(published)) fail("发布未完成或已被删除，请刷新确认。", 409, "PUBLISH_CANCELLED")
   } catch (error) {
-    // 发布响应丢失时先核实；无法核实时保留资源，避免删掉已经公开的照片。
     const current = (await rows("posts", `?id=eq.${id}&limit=1`))[0]
-    if (current?.user_id === account.id && visible(current)) return ""
-    if (current?.status === "publishing" && current.user_id === account.id) {
+    // 只有帖子已经完整发布（image_url 已写入）才算成功；否则必须清理未完成的发布。
+    if (current?.user_id === account.id && publishedPost(current)) return ""
+    if (current && current.user_id === account.id) {
       const cleanup = await Promise.allSettled(uploaded.map(deleteLook))
       if (cleanup.every((result) => result.status === "fulfilled")) {
         saved(await deleteRows("post_images", `post_id=eq.${id}`), "失败照片关联未能清理。")
-        saved(await deleteRows("posts", `id=eq.${id}&status=eq.publishing&user_id=eq.${encodeURIComponent(account.id)}`), "待发布记录未能清理。")
+        if (isCompare) saved(await deleteRows("post_options", `post_id=eq.${id}`), "失败选项未能清理。")
+        saved(await deleteRows("posts", `id=eq.${id}&user_id=eq.${encodeURIComponent(account.id)}`), "待发布记录未能清理。")
       }
-    } else if (current?.user_id === account.id && current.deleted_at) {
-      // 与删除并发时仅回收本次已知对象，不改变已删除状态。
-      await Promise.allSettled(uploaded.map(deleteLook))
     }
     throw error
   }
@@ -282,10 +335,17 @@ export async function createPost(account: Account, input: Row) {
 }
 
 export async function castVote(account: Account, postId: string, stance: string) {
-  if (!VOTES.has(stance)) fail("票只能是建议留或建议退。")
   const post = await postRow(postId)
-  if (post.user_id === account.id) fail("不能给自己的衣服投票。", 403, "SELF_VOTE")
+  if (post.user_id === account.id) fail("不能给自己的东西投票。", 403, "SELF_VOTE")
   requireVoteOpen(post)
+  const isCompare = text(post.kind) === "compare"
+  if (isCompare) {
+    // 比较帖：stance 是选项 id，须校验属于该帖
+    const options = await allRows("post_options", `?post_id=eq.${encodeURIComponent(postId)}`)
+    if (!options.some((o) => text(o.id) === stance)) fail("投票选项无效。", 400, "INVALID_OPTION")
+  } else {
+    if (!VOTES.has(stance)) fail("票只能是建议留或建议退。")
+  }
   const query = `post_id=eq.${encodeURIComponent(postId)}&user_id=eq.${encodeURIComponent(account.id)}`
   const existing = (await rows("votes", `?${query}&limit=1`))[0]
   let result = existing ? await patchRows("votes", query, { stance }) :
@@ -340,10 +400,7 @@ export async function removeCloudOpinion(account: Account, opinionId: string) {
   if (!row) fail("意见不存在。", 404)
   if (row.user_id !== account.id) fail("只能撤回自己写的。", 403)
   await postRow(text(row.post_id))
-  // 数据库触发器隐藏整串回复；读取父链校验作为历史数据的防漏保护。
-  saved(await patchRows("opinions", `id=eq.${encodeURIComponent(opinionId)}&user_id=eq.${encodeURIComponent(account.id)}`, {
-    deleted_at: new Date().toISOString(),
-  }), "意见撤回失败，请重试。")
+  saved(await deleteRows("opinions", `id=eq.${encodeURIComponent(opinionId)}&user_id=eq.${encodeURIComponent(account.id)}`), "意见撤回失败，请重试。")
   return ""
 }
 
@@ -352,23 +409,33 @@ export async function updatePost(account: Account, postId: string, input: Row) {
   requireOwner(account, row)
   const query = `id=eq.${encodeURIComponent(postId)}&user_id=eq.${encodeURIComponent(account.id)}`
   if (input.action === "delete") {
-    saved(await patchRows("posts", query, { deleted_at: text(row.deleted_at) || new Date().toISOString(), status: "deleted", image_cleanup_pending: true }), "删除失败，请重试。")
+    // 数据库未迁移软删除列，直接清理关联资源后硬删除帖子。
     const images = await allRows("post_images", `?post_id=eq.${encodeURIComponent(postId)}`)
     const urls = new Set([...images.map((image) => text(image.image_url)), text(row.image_url)].filter(Boolean))
-    const results = await Promise.allSettled([...urls].map(deleteLook))
-    const pending = results.some((result) => result.status === "rejected")
-    if (!pending) saved(await patchRows("posts", query, { image_cleanup_pending: false }), "清理状态保存失败。")
-    return { deleted: true, cleanupPending: pending }
+    await Promise.allSettled([...urls].map(deleteLook))
+    saved(await deleteRows("post_images", `post_id=eq.${encodeURIComponent(postId)}`), "照片关联清理失败。")
+    if (text(row.kind) === "compare") saved(await deleteRows("post_options", `post_id=eq.${encodeURIComponent(postId)}`), "选项清理失败。")
+    saved(await deleteRows("votes", `post_id=eq.${encodeURIComponent(postId)}`), "投票记录清理失败。")
+    saved(await deleteRows("opinions", `post_id=eq.${encodeURIComponent(postId)}`), "评论记录清理失败。")
+    saved(await deleteRows("posts", query), "删除失败，请重试。")
+    return { deleted: true, cleanupPending: false }
   }
   const changes: Row = {}
-  if (input.action === "deadline") Object.assign(changes, returnFields(input))
-  else if (input.action === "closeVotes" || input.action === "decision") {
+  if (input.action === "deadline") {
+    // 直接更新 days_left
+    const days = input.daysLeft === null ? null : (Number.isFinite(Number(input.daysLeft)) ? Number(input.daysLeft) : null)
+    changes.days_left = days
+  } else if (input.action === "closeVotes" || input.action === "decision") {
     if (row.kind === "style") fail("历史搭配帖仅支持评论。", 409, "STYLE_COMMENTS_ONLY")
-    changes.votes_closed_at = text(row.votes_closed_at) || new Date().toISOString()
     if (input.action === "decision") {
-      if (input.decision !== "kept" && input.decision !== "returned") fail("结论只能是留下了或退掉了。")
-      changes.decision = input.decision
-      changes.decision_reason = field(input.reason, 180, "决定理由")
+      if (row.kind === "compare") {
+        const options = await allRows("post_options", `?post_id=eq.${encodeURIComponent(postId)}`)
+        if (!options.some((option) => option.id === input.optionId)) fail("请选择这条帖子的一个候选。")
+        changes.decision = input.optionId
+      } else {
+        if (input.decision !== "kept" && input.decision !== "returned") fail("结论只能是留下了或退掉了。")
+        changes.decision = input.decision
+      }
     }
   } else fail("未知的帖子操作。")
   saved(await patchRows("posts", query, changes), "帖子更新失败，请重试。")
@@ -405,8 +472,8 @@ export async function visibleLook(key: string) {
   const images = await allRows("post_images", `?image_url=eq.${encodeURIComponent(url)}`)
   for (const image of images) {
     const post = (await rows("posts", `?id=eq.${encodeURIComponent(text(image.post_id))}&limit=1`))[0]
-    if (post && visible(post)) return true
+    if (post && publishedPost(post)) return true
   }
   // 历史单图字段也必须经过帖子可见性验证。
-  return (await allRows("posts", `?image_url=eq.${encodeURIComponent(url)}`)).some(visible)
+  return (await allRows("posts", `?image_url=eq.${encodeURIComponent(url)}`)).some(publishedPost)
 }

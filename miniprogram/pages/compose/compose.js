@@ -1,12 +1,6 @@
 const store = require("../../utils/store")
 
-const KINDS = [
-  { id: "keep", label: "要不要留" },
-  { id: "style", label: "怎么搭" },
-  { id: "both", label: "两个都纠结" },
-]
-
-const CATEGORIES = ["上衣", "裤装", "裙装", "外套", "鞋", "包"]
+const CATEGORIES = ["数码", "美妆", "家居", "服饰", "食品", "其它"]
 
 const ILLUSTRATIONS = [
   { id: "knit", label: "针织" },
@@ -51,12 +45,10 @@ function keepFile(tempPath) {
 
 Page({
   data: {
-    kinds: KINDS,
     categories: CATEGORIES,
     illustrations: ILLUSTRATIONS,
     days: DAYS,
-    kind: "keep",
-    category: "上衣",
+    category: "其它",
     illustration: "knit",
     image: "",
     images: [],
@@ -76,9 +68,6 @@ Page({
       this.pendingSubmit = false
       this.submit()
     }
-  },
-  setKind(event) {
-    this.setData({ kind: event.currentTarget.dataset.id })
   },
   setCategory(event) {
     this.setData({ category: event.currentTarget.dataset.id })
@@ -197,7 +186,7 @@ Page({
       city: "",
       postedLabel: "刚刚",
       createdAt: Date.now(),
-      kind: this.data.kind,
+      kind: "keep",
       category: this.data.category,
       title: title.slice(0, 40),
       story: story.slice(0, 400),
